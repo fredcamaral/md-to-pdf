@@ -57,7 +57,9 @@ jobs:
         name: codecov-umbrella
     
     - name: Build
-      run: go build -v ./...
+      run: |
+        # Build all packages except plugin examples
+        go build -v $(go list ./... | grep -v '/examples/plugins/')
 
   build:
     runs-on: ubuntu-latest

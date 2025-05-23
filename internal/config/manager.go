@@ -59,7 +59,7 @@ func LoadUserConfig() (*UserConfig, error) {
 		return &UserConfig{}, nil
 	}
 
-	data, err := os.ReadFile(configPath)
+	data, err := os.ReadFile(configPath) // #nosec G304 - config path is generated from user's home directory
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
@@ -78,7 +78,7 @@ func SaveUserConfig(config *UserConfig) error {
 	configDir := filepath.Dir(configPath)
 
 	// Create config directory if it doesn't exist
-	err := os.MkdirAll(configDir, 0755)
+	err := os.MkdirAll(configDir, 0750)
 	if err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
@@ -88,7 +88,7 @@ func SaveUserConfig(config *UserConfig) error {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	err = os.WriteFile(configPath, data, 0644)
+	err = os.WriteFile(configPath, data, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}

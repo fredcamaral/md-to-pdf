@@ -82,7 +82,7 @@ func (e *Engine) Convert(opts ConversionOptions) error {
 }
 
 func (e *Engine) convertFile(inputPath, outputPath string) error {
-	content, err := os.ReadFile(inputPath)
+	content, err := os.ReadFile(inputPath) // #nosec G304 - file path comes from user CLI input
 	if err != nil {
 		return &ConversionError{
 			File:    inputPath,
@@ -114,7 +114,7 @@ func (e *Engine) convertFile(inputPath, outputPath string) error {
 
 	finalOutputPath := e.determineOutputPath(inputPath, outputPath)
 
-	err = os.WriteFile(finalOutputPath, pdfBuffer.Bytes(), 0644)
+	err = os.WriteFile(finalOutputPath, pdfBuffer.Bytes(), 0600)
 	if err != nil {
 		return &ConversionError{
 			File:    inputPath,

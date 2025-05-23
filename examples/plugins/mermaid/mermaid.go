@@ -1,7 +1,7 @@
 package main
 
 import (
-	"crypto/md5"
+	"crypto/sha256"
 	"fmt"
 	"os"
 	"os/exec"
@@ -39,7 +39,7 @@ func NewPlugin() plugin.Plugin {
 
 func (p *MermaidPlugin) Init(config map[string]interface{}) error {
 	// Create output directory for mermaid diagrams
-	err := os.MkdirAll(p.outputDir, 0755)
+	err := os.MkdirAll(p.outputDir, 0750)
 	if err != nil {
 		return fmt.Errorf("failed to create mermaid output directory: %w", err)
 	}
@@ -112,7 +112,7 @@ func (p *MermaidPlugin) SupportedNodes() []ast.NodeKind {
 
 func (p *MermaidPlugin) generateDiagram(content string) (string, error) {
 	// Generate a unique filename based on content hash
-	hash := md5.Sum([]byte(content))
+	hash := sha256.Sum256([]byte(content))
 	filename := fmt.Sprintf("mermaid-%x.png", hash)
 	outputPath := filepath.Join(p.outputDir, filename)
 
@@ -139,14 +139,14 @@ func (p *MermaidPlugin) generateWithCLI(content, outputPath string) error {
 
 	// Create temporary input file
 	tempInput := filepath.Join(p.outputDir, "temp.mmd")
-	err = os.WriteFile(tempInput, []byte(content), 0644)
+	err = os.WriteFile(tempInput, []byte(content), 0600)
 	if err != nil {
 		return err
 	}
 	defer os.Remove(tempInput)
 
 	// Run mermaid CLI
-	cmd := exec.Command("mmdc", "-i", tempInput, "-o", outputPath, "-b", "white")
+	cmd := exec.Command("mmdc", "-i", tempInput, "-o", outputPath, "-b", "white") // #nosec G204 - command arguments are controlled
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("mermaid CLI failed: %w, output: %s", err, output)
@@ -160,7 +160,7 @@ func (p *MermaidPlugin) createPlaceholder(content, outputPath string) (string, e
 	placeholderContent := fmt.Sprintf("Mermaid Diagram Placeholder\n\nContent:\n%s\n\nTo generate actual diagrams, install mermaid CLI:\n npm install -g @mermaid-js/mermaid-cli", content)
 
 	placeholderPath := outputPath + ".txt"
-	err := os.WriteFile(placeholderPath, []byte(placeholderContent), 0644)
+	err := os.WriteFile(placeholderPath, []byte(placeholderContent), 0600)
 	if err != nil {
 		return "", err
 	}

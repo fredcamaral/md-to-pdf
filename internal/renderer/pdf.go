@@ -192,7 +192,7 @@ func (r *PDFRenderer) renderParagraph(pdf *gofpdf.Fpdf, paragraph *ast.Paragraph
 
 func (r *PDFRenderer) renderMermaidImage(pdf *gofpdf.Fpdf, imagePath string) {
 	// Read the image file
-	imageData, err := os.ReadFile(imagePath)
+	imageData, err := os.ReadFile(imagePath) // #nosec G304 - path is generated internally by plugins
 	if err != nil {
 		// Fallback to text if image can't be read
 		pdf.MultiCell(0, r.config.FontSize*1.2, fmt.Sprintf("[Mermaid diagram: %s (failed to load)]", imagePath), "", "", false)

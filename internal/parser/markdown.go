@@ -28,7 +28,7 @@ func (p *MarkdownParser) Parse(content []byte) (ast.Node, error) {
 }
 
 func (p *MarkdownParser) ParseFile(path string) (ast.Node, error) {
-	content, err := os.ReadFile(path)
+	content, err := os.ReadFile(path) // #nosec G304 - file path comes from user CLI input
 	if err != nil {
 		return nil, err
 	}
