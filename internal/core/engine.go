@@ -43,9 +43,9 @@ func NewEngine(config *Config) (*Engine, error) {
 			MaxHeight: config.Renderer.Mermaid.MaxHeight,
 		},
 	}
-	
+
 	pluginManager := plugins.NewManager(config.Plugins.Directory, config.Plugins.Enabled)
-	
+
 	return &Engine{
 		parser:   parser.NewMarkdownParser(),
 		renderer: renderer.NewPDFRenderer(rendererConfig, pluginManager),
@@ -60,24 +60,24 @@ func (e *Engine) Convert(opts ConversionOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to load plugins: %w", err)
 	}
-	
+
 	defer func() {
 		if cleanupErr := e.plugins.Cleanup(); cleanupErr != nil {
 			fmt.Printf("Warning: plugin cleanup failed: %v\n", cleanupErr)
 		}
 	}()
-	
+
 	for _, inputFile := range opts.InputFiles {
 		err := e.convertFile(inputFile, opts.OutputPath)
 		if err != nil {
 			return fmt.Errorf("failed to convert %s: %w", inputFile, err)
 		}
-		
+
 		if opts.Verbose {
 			fmt.Printf("Converted: %s\n", inputFile)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -113,7 +113,7 @@ func (e *Engine) convertFile(inputPath, outputPath string) error {
 	}
 
 	finalOutputPath := e.determineOutputPath(inputPath, outputPath)
-	
+
 	err = os.WriteFile(finalOutputPath, pdfBuffer.Bytes(), 0644)
 	if err != nil {
 		return &ConversionError{
@@ -131,7 +131,7 @@ func (e *Engine) determineOutputPath(inputPath, outputPath string) string {
 	if outputPath != "" {
 		return outputPath
 	}
-	
+
 	baseName := strings.TrimSuffix(filepath.Base(inputPath), filepath.Ext(inputPath))
 	return baseName + ".pdf"
 }

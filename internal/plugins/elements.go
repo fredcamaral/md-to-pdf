@@ -20,20 +20,20 @@ func (t *TextElement) Render(pdf *gofpdf.Fpdf, ctx *RenderContext) error {
 	if t.X != 0 || t.Y != 0 {
 		pdf.SetXY(t.X, t.Y)
 	}
-	
+
 	fontSize := t.FontSize
 	if fontSize == 0 {
 		fontSize = 12 // Default font size
 	}
-	
+
 	style := t.Style
 	if style == "" {
 		style = ""
 	}
-	
+
 	pdf.SetFont("Arial", style, fontSize)
 	pdf.Cell(0, 6, t.Content)
-	
+
 	return nil
 }
 
@@ -46,18 +46,18 @@ func (t *TextElement) Width() float64 {
 }
 
 type ImageElement struct {
-	Data       []byte
-	Format     string // "PNG", "JPG", "GIF"
+	Data        []byte
+	Format      string // "PNG", "JPG", "GIF"
 	ImageWidth  float64
 	ImageHeight float64
-	X, Y       float64
+	X, Y        float64
 }
 
 func (i *ImageElement) Render(pdf *gofpdf.Fpdf, ctx *RenderContext) error {
 	if i.X != 0 || i.Y != 0 {
 		pdf.SetXY(i.X, i.Y)
 	}
-	
+
 	// Register and place the image
 	if len(i.Data) > 0 {
 		// Register image with PDF
@@ -66,23 +66,23 @@ func (i *ImageElement) Render(pdf *gofpdf.Fpdf, ctx *RenderContext) error {
 			gofpdf.ImageOptions{ImageType: i.Format},
 			bytes.NewReader(i.Data),
 		)
-		
+
 		if imageInfo != nil {
 			// Calculate dimensions to fit within page margins
 			pageWidth, _ := pdf.GetPageSize()
 			leftMargin, _, rightMargin, _ := pdf.GetMargins()
 			maxWidth := pageWidth - leftMargin - rightMargin
-			
+
 			width := i.ImageWidth
 			height := i.ImageHeight
-			
+
 			// Scale down if too wide
 			if width > maxWidth {
 				scale := maxWidth / width
 				width = maxWidth
 				height = height * scale
 			}
-			
+
 			// Place the image
 			pdf.ImageOptions(
 				fmt.Sprintf("img_%p", i),
@@ -93,7 +93,7 @@ func (i *ImageElement) Render(pdf *gofpdf.Fpdf, ctx *RenderContext) error {
 				0,
 				"",
 			)
-			
+
 			// Move cursor below image
 			pdf.Ln(height + 3)
 		}
@@ -102,7 +102,7 @@ func (i *ImageElement) Render(pdf *gofpdf.Fpdf, ctx *RenderContext) error {
 		pdf.Cell(0, i.ImageHeight, "[Image placeholder]")
 		pdf.Ln(i.ImageHeight)
 	}
-	
+
 	return nil
 }
 

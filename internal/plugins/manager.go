@@ -83,7 +83,7 @@ func (m *Manager) loadPlugin(path string) error {
 	}
 
 	pluginInstance := newPluginFunc()
-	
+
 	// Initialize plugin
 	err = pluginInstance.Init(make(map[string]interface{}))
 	if err != nil {
@@ -119,7 +119,7 @@ func (m *Manager) GetGenerators(phase GenerationPhase) []ContentGenerator {
 
 func (m *Manager) ApplyTransformers(node ast.Node, ctx *TransformContext) (ast.Node, error) {
 	result := node
-	
+
 	for _, transformer := range m.transformers {
 		// Check if transformer supports this node type
 		supportedNodes := transformer.SupportedNodes()
@@ -140,48 +140,48 @@ func (m *Manager) ApplyTransformers(node ast.Node, ctx *TransformContext) (ast.N
 		if err != nil {
 			return result, fmt.Errorf("transformer %s failed: %w", transformer.Name(), err)
 		}
-		
+
 		result = transformedNode
 	}
-	
+
 	return result, nil
 }
 
 func (m *Manager) GenerateContent(phase GenerationPhase, ctx *RenderContext) ([]PDFElement, error) {
 	var elements []PDFElement
-	
+
 	generators := m.GetGenerators(phase)
 	for _, generator := range generators {
 		generatedElements, err := generator.Generate(ctx)
 		if err != nil {
 			return elements, fmt.Errorf("generator %s failed: %w", generator.Name(), err)
 		}
-		
+
 		elements = append(elements, generatedElements...)
 	}
-	
+
 	return elements, nil
 }
 
 func (m *Manager) Cleanup() error {
 	var errors []string
-	
+
 	for name, p := range m.plugins {
 		if err := p.Cleanup(); err != nil {
 			errors = append(errors, fmt.Sprintf("%s: %v", name, err))
 		}
 	}
-	
+
 	if len(errors) > 0 {
 		return fmt.Errorf("plugin cleanup errors: %s", strings.Join(errors, "; "))
 	}
-	
+
 	return nil
 }
 
 func (m *Manager) ListPlugins() []PluginInfo {
 	var plugins []PluginInfo
-	
+
 	for _, p := range m.plugins {
 		plugins = append(plugins, PluginInfo{
 			Name:        p.Name(),
@@ -189,6 +189,6 @@ func (m *Manager) ListPlugins() []PluginInfo {
 			Description: p.Description(),
 		})
 	}
-	
+
 	return plugins
 }

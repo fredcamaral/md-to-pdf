@@ -12,7 +12,7 @@ func DefaultConfig() *Config {
 			HeadingScale: 1.5, // Headings 50% bigger than base font
 			LineSpacing:  1.2, // 20% line spacing
 			CodeFont:     "Courier",
-			CodeSize:     10,  // Code slightly smaller than base font
+			CodeSize:     10, // Code slightly smaller than base font
 			Margins: Margins{
 				Top:    20,
 				Bottom: 20,

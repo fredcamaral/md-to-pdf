@@ -16,7 +16,7 @@ func NewMarkdownParser() *MarkdownParser {
 	md := goldmark.New(
 		goldmark.WithExtensions(),
 	)
-	
+
 	return &MarkdownParser{
 		goldmark: md,
 	}

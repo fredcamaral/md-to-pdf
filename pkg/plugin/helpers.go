@@ -13,12 +13,12 @@ func IsCodeBlock(node ast.Node, language string, source []byte) bool {
 	if node.Kind() != ast.KindFencedCodeBlock {
 		return false
 	}
-	
+
 	codeBlock := node.(*ast.FencedCodeBlock)
 	if codeBlock.Info == nil {
 		return language == ""
 	}
-	
+
 	info := string(codeBlock.Info.Segment.Value(source))
 	return strings.TrimSpace(info) == language
 }
@@ -28,9 +28,9 @@ func GetCodeBlockContent(node ast.Node, source []byte) string {
 	if node.Kind() != ast.KindFencedCodeBlock && node.Kind() != ast.KindCodeBlock {
 		return ""
 	}
-	
+
 	var content strings.Builder
-	
+
 	if fencedBlock, ok := node.(*ast.FencedCodeBlock); ok {
 		lines := fencedBlock.Lines()
 		for i := 0; i < lines.Len(); i++ {
@@ -44,7 +44,7 @@ func GetCodeBlockContent(node ast.Node, source []byte) string {
 			content.Write(line.Value(source))
 		}
 	}
-	
+
 	return content.String()
 }
 
@@ -53,12 +53,12 @@ func GetCodeBlockLanguage(node ast.Node, source []byte) string {
 	if node.Kind() != ast.KindFencedCodeBlock {
 		return ""
 	}
-	
+
 	fencedBlock := node.(*ast.FencedCodeBlock)
 	if fencedBlock.Info == nil {
 		return ""
 	}
-	
+
 	info := string(fencedBlock.Info.Segment.Value(source))
 	return strings.TrimSpace(strings.Split(info, " ")[0]) // Get first word only
 }
@@ -69,7 +69,7 @@ func ReplaceNode(oldNode, newNode ast.Node) {
 	if parent == nil {
 		return
 	}
-	
+
 	// Find the position of the old node
 	for child := parent.FirstChild(); child != nil; child = child.NextSibling() {
 		if child == oldNode {

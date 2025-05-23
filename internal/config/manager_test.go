@@ -12,11 +12,11 @@ func TestLoadUserConfig_EmptyConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got: %v", err)
 	}
-	
+
 	if config == nil {
 		t.Fatal("Expected config, got nil")
 	}
-	
+
 	// Config should be loaded successfully (values may exist if user has config)
 	// This test just ensures the loading mechanism works
 }
@@ -31,7 +31,7 @@ func TestUserConfigStructure(t *testing.T) {
 		Author:       "Test Author",
 		MermaidScale: 3.0,
 	}
-	
+
 	if testConfig.FontFamily != "Times" {
 		t.Errorf("Expected FontFamily Times, got %s", testConfig.FontFamily)
 	}
@@ -55,10 +55,10 @@ func TestApplyUserConfig(t *testing.T) {
 		Author:       "Test Author",
 		MermaidScale: 3.0,
 	}
-	
+
 	// Apply user config
 	ApplyUserConfig(baseConfig, userConfig)
-	
+
 	// Check if values were applied
 	if baseConfig.Renderer.FontFamily != "Times" {
 		t.Errorf("Expected FontFamily Times, got %s", baseConfig.Renderer.FontFamily)
@@ -80,19 +80,19 @@ func TestApplyUserConfig(t *testing.T) {
 func TestApplyUserConfig_ZeroValues(t *testing.T) {
 	baseConfig := core.DefaultConfig()
 	originalFontSize := baseConfig.Renderer.FontSize
-	
+
 	userConfig := &UserConfig{
 		FontFamily: "Times", // Set this
 		FontSize:   0,       // Don't set this (zero value)
 	}
-	
+
 	ApplyUserConfig(baseConfig, userConfig)
-	
+
 	// FontFamily should be changed
 	if baseConfig.Renderer.FontFamily != "Times" {
 		t.Errorf("Expected FontFamily to be changed to Times, got %s", baseConfig.Renderer.FontFamily)
 	}
-	
+
 	// FontSize should remain unchanged (zero value ignored)
 	if baseConfig.Renderer.FontSize != originalFontSize {
 		t.Errorf("Expected FontSize to remain %f, got %f", originalFontSize, baseConfig.Renderer.FontSize)

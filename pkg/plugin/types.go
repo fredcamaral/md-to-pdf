@@ -71,9 +71,9 @@ func ExtractText(node ast.Node, source []byte) string {
 	if textNode, ok := node.(*ast.Text); ok {
 		return string(textNode.Segment.Value(source))
 	}
-	
+
 	var text string
-	ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+	_ = ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if entering && n.Kind() == ast.KindText {
 			if textNode, ok := n.(*ast.Text); ok {
 				text += string(textNode.Segment.Value(source))
@@ -81,7 +81,7 @@ func ExtractText(node ast.Node, source []byte) string {
 		}
 		return ast.WalkContinue, nil
 	})
-	
+
 	return text
 }
 

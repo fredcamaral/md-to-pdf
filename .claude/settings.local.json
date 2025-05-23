@@ -17,7 +17,10 @@
       "Bash(./md-to-pdf:*)",
       "Bash(cat:*)",
       "Bash(go test:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(gofmt:*)"
     ],
     "deny": []
   }
