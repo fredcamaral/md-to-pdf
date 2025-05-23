@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go mod:*)",
+      "Bash(go build:*)",
+      "Bash(./md-to-pdf convert:*)",
+      "Bash(ls:*)",
+      "Bash(./md-to-pdf version)",
+      "Bash(./md-to-pdf --help)",
+      "Bash(mkdir:*)",
+      "Bash(make:*)",
+      "Bash(cp:*)",
+      "Bash(rm:*)",
+      "Bash(go get:*)",
+      "Bash(./md-to-pdf config list)",
+      "Bash(./md-to-pdf config set font-size 14)",
+      "Bash(./md-to-pdf:*)",
+      "Bash(cat:*)",
+      "Bash(go test:*)",
+      "Bash(chmod:*)"
+    ],
+    "deny": []
+  }
+}

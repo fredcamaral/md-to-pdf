@@ -1,0 +1,168 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: 1.22
+    
+    - name: Install Node.js (for mermaid CLI)
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install mermaid CLI
+      run: npm install -g @mermaid-js/mermaid-cli
+    
+    - name: Run tests
+      run: go test -v ./...
+    
+    - name: Build for multiple platforms
+      run: make release
+    
+    - name: Build example plugins
+      run: make plugins
+    
+    - name: Create release archive
+      run: |
+        mkdir -p release-files
+        cp dist/* release-files/
+        cp examples/plugins/*.so release-files/
+        cp README.md CHANGELOG.md LICENSE release-files/
+        tar -czf md-to-pdf-plugins.tar.gz -C examples/plugins *.so
+    
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Extract changelog for this version
+        VERSION=${GITHUB_REF#refs/tags/}
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        
+        # Get changelog content between this tag and previous tag
+        PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+        if [ -n "$PREV_TAG" ]; then
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          git log --pretty=format:"- %s" $PREV_TAG..HEAD >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        else
+          echo "CHANGELOG=Initial release" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ steps.changelog.outputs.VERSION }}
+        body: |
+          ## Changes
+          ${{ steps.changelog.outputs.CHANGELOG }}
+          
+          ## Installation
+          
+          Download the appropriate binary for your platform and make it executable:
+          
+          ```bash
+          # Linux AMD64
+          curl -L https://github.com/fredcamaral/md-to-pdf/releases/download/${{ steps.changelog.outputs.VERSION }}/md-to-pdf-linux-amd64 -o md-to-pdf
+          chmod +x md-to-pdf
+          
+          # macOS ARM64 (Apple Silicon)
+          curl -L https://github.com/fredcamaral/md-to-pdf/releases/download/${{ steps.changelog.outputs.VERSION }}/md-to-pdf-darwin-arm64 -o md-to-pdf
+          chmod +x md-to-pdf
+          
+          # Windows AMD64
+          curl -L https://github.com/fredcamaral/md-to-pdf/releases/download/${{ steps.changelog.outputs.VERSION }}/md-to-pdf-windows-amd64.exe -o md-to-pdf.exe
+          ```
+          
+          ## Plugin Support
+          
+          Download the plugins archive for additional functionality:
+          - Table of Contents generation
+          - Mermaid diagram support
+          
+          ## Requirements
+          
+          For mermaid diagram support, install mermaid CLI:
+          ```bash
+          npm install -g @mermaid-js/mermaid-cli
+          ```
+        draft: false
+        prerelease: false
+    
+    # Upload release assets
+    - name: Upload Linux AMD64
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/md-to-pdf-linux-amd64
+        asset_name: md-to-pdf-linux-amd64
+        asset_content_type: application/octet-stream
+    
+    - name: Upload Linux ARM64
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/md-to-pdf-linux-arm64
+        asset_name: md-to-pdf-linux-arm64
+        asset_content_type: application/octet-stream
+    
+    - name: Upload macOS AMD64
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/md-to-pdf-darwin-amd64
+        asset_name: md-to-pdf-darwin-amd64
+        asset_content_type: application/octet-stream
+    
+    - name: Upload macOS ARM64
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/md-to-pdf-darwin-arm64
+        asset_name: md-to-pdf-darwin-arm64
+        asset_content_type: application/octet-stream
+    
+    - name: Upload Windows AMD64
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/md-to-pdf-windows-amd64.exe
+        asset_name: md-to-pdf-windows-amd64.exe
+        asset_content_type: application/octet-stream
+    
+    - name: Upload Plugins Archive
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./md-to-pdf-plugins.tar.gz
+        asset_name: md-to-pdf-plugins.tar.gz
+        asset_content_type: application/gzip
