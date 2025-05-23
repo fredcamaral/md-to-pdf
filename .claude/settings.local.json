@@ -20,7 +20,10 @@
       "Bash(chmod:*)",
       "Bash(gh run list:*)",
       "Bash(gh run view:*)",
-      "Bash(gofmt:*)"
+      "Bash(gofmt:*)",
+      "Bash(find:*)",
+      "Bash(git add:*)",
+      "Bash(git restore:*)"
     ],
     "deny": []
   }
