@@ -3,9 +3,11 @@ package cmd
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/fredcamaral/md-to-pdf/internal/config"
+	"github.com/fredcamaral/md-to-pdf/internal/core"
 )
 
 func TestSetConfigValue_ValidValues(t *testing.T) {
@@ -237,6 +239,78 @@ func TestSetConfigValue_InvalidRange(t *testing.T) {
 	}
 }
 
+func TestSetConfigValue_RangeValidation(t *testing.T) {
+	tests := []struct {
+		name      string
+		key       string
+		value     string
+		wantError bool
+	}{
+		// font-size: 1-72
+		{"font-size_below_min", "font-size", "0.5", true},
+		{"font-size_at_min", "font-size", "1", false},
+		{"font-size_at_max", "font-size", "72", false},
+		{"font-size_above_max", "font-size", "73", true},
+		{"font-size_way_above_max", "font-size", "1000", true},
+
+		// margin-*: 0-100
+		{"margin-top_below_min", "margin-top", "-1", true},
+		{"margin-top_at_min", "margin-top", "0", false},
+		{"margin-top_at_max", "margin-top", "100", false},
+		{"margin-top_above_max", "margin-top", "101", true},
+		{"margin-bottom_valid", "margin-bottom", "50", false},
+		{"margin-left_valid", "margin-left", "25", false},
+		{"margin-right_valid", "margin-right", "25", false},
+
+		// line-spacing: 0.1-5.0
+		{"line-spacing_below_min", "line-spacing", "0.05", true},
+		{"line-spacing_at_min", "line-spacing", "0.1", false},
+		{"line-spacing_at_max", "line-spacing", "5.0", false},
+		{"line-spacing_above_max", "line-spacing", "5.1", true},
+
+		// heading-scale: 0.1-10.0
+		{"heading-scale_below_min", "heading-scale", "0.05", true},
+		{"heading-scale_at_min", "heading-scale", "0.1", false},
+		{"heading-scale_at_max", "heading-scale", "10.0", false},
+		{"heading-scale_above_max", "heading-scale", "10.1", true},
+
+		// code-size: 6-48
+		{"code-size_below_min", "code-size", "5", true},
+		{"code-size_at_min", "code-size", "6", false},
+		{"code-size_at_max", "code-size", "48", false},
+		{"code-size_above_max", "code-size", "49", true},
+
+		// mermaid-scale: 0.1-10.0
+		{"mermaid-scale_below_min", "mermaid-scale", "0.05", true},
+		{"mermaid-scale_at_min", "mermaid-scale", "0.1", false},
+		{"mermaid-scale_at_max", "mermaid-scale", "10.0", false},
+		{"mermaid-scale_above_max", "mermaid-scale", "10.1", true},
+
+		// mermaid-max-width: 0-1000
+		{"mermaid-max-width_below_min", "mermaid-max-width", "-1", true},
+		{"mermaid-max-width_at_min", "mermaid-max-width", "0", false},
+		{"mermaid-max-width_at_max", "mermaid-max-width", "1000", false},
+		{"mermaid-max-width_above_max", "mermaid-max-width", "1001", true},
+
+		// mermaid-max-height: 0-1000
+		{"mermaid-max-height_below_min", "mermaid-max-height", "-1", true},
+		{"mermaid-max-height_at_min", "mermaid-max-height", "0", false},
+		{"mermaid-max-height_at_max", "mermaid-max-height", "1000", false},
+		{"mermaid-max-height_above_max", "mermaid-max-height", "1001", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			userConfig := &config.UserConfig{}
+			err := setConfigValue(userConfig, tt.key, tt.value)
+			if (err != nil) != tt.wantError {
+				t.Errorf("setConfigValue(%s, %s) error = %v, wantError %v",
+					tt.key, tt.value, err, tt.wantError)
+			}
+		})
+	}
+}
+
 func TestSetConfigValue_InvalidType(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -266,13 +340,13 @@ func TestSetConfigValue_InvalidType(t *testing.T) {
 			name:      "negative_for_margin",
 			key:       "margin-top",
 			value:     "-10",
-			wantError: false, // Go's strconv parses negative floats successfully
+			wantError: true, // negative margins are now rejected by range validation
 		},
 		{
-			name:      "scientific_notation",
+			name:      "scientific_notation_out_of_range",
 			key:       "font-size",
 			value:     "1e2",
-			wantError: false, // strconv.ParseFloat accepts scientific notation
+			wantError: true, // 100 is out of range for font-size (1-72)
 		},
 	}
 
@@ -429,6 +503,81 @@ func TestSetConfigValue_UnknownKey(t *testing.T) {
 	}
 }
 
+func TestSetConfigValue_UnknownKeyListsValidKeys(t *testing.T) {
+	userConfig := &config.UserConfig{}
+	err := setConfigValue(userConfig, "fontsize", "12")
+	if err == nil {
+		t.Fatal("expected error for unknown key")
+	}
+
+	errMsg := err.Error()
+	if !strings.Contains(errMsg, "unknown configuration key: fontsize") {
+		t.Errorf("error should mention the unknown key, got: %s", errMsg)
+	}
+	if !strings.Contains(errMsg, "Valid keys:") {
+		t.Errorf("error should list valid keys, got: %s", errMsg)
+	}
+	if !strings.Contains(errMsg, "font-size") {
+		t.Errorf("error should include 'font-size' as a valid key, got: %s", errMsg)
+	}
+}
+
+func TestResetConfigValue_UnknownKeyListsValidKeys(t *testing.T) {
+	userConfig := &config.UserConfig{}
+	err := resetConfigValue(userConfig, "fontsize")
+	if err == nil {
+		t.Fatal("expected error for unknown key")
+	}
+
+	errMsg := err.Error()
+	if !strings.Contains(errMsg, "Valid keys:") {
+		t.Errorf("error should list valid keys, got: %s", errMsg)
+	}
+}
+
+func TestFindConfigKey(t *testing.T) {
+	tests := []struct {
+		name     string
+		keyName  string
+		wantNil  bool
+	}{
+		{"valid_key_font_size", "font-size", false},
+		{"valid_key_page_size", "page-size", false},
+		{"valid_key_mermaid_scale", "mermaid-scale", false},
+		{"invalid_key", "not-a-key", true},
+		{"typo", "fontsize", true},
+		{"empty", "", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := findConfigKey(tt.keyName)
+			gotNil := result == nil
+			if gotNil != tt.wantNil {
+				t.Errorf("findConfigKey(%q) nil = %v, want nil = %v", tt.keyName, gotNil, tt.wantNil)
+			}
+		})
+	}
+}
+
+func TestValidKeysString(t *testing.T) {
+	result := validKeysString()
+
+	expectedKeys := []string{
+		"font-family", "font-size", "heading-scale", "line-spacing",
+		"code-font", "code-size", "page-size",
+		"margin-top", "margin-bottom", "margin-left", "margin-right",
+		"title", "author", "subject",
+		"mermaid-scale", "mermaid-max-width", "mermaid-max-height",
+	}
+
+	for _, key := range expectedKeys {
+		if !strings.Contains(result, key) {
+			t.Errorf("validKeysString() should contain %q, got: %s", key, result)
+		}
+	}
+}
+
 func TestIsValidPageSize(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -456,9 +605,9 @@ func TestIsValidPageSize(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := isValidPageSize(tt.size)
+			result := core.IsValidPageSize(tt.size)
 			if result != tt.expected {
-				t.Errorf("isValidPageSize(%q) = %v, want %v", tt.size, result, tt.expected)
+				t.Errorf("core.IsValidPageSize(%q) = %v, want %v", tt.size, result, tt.expected)
 			}
 		})
 	}

@@ -67,7 +67,8 @@ func TestConfigMergingPriority(t *testing.T) {
 			}
 			config.ApplyUserConfig(baseConfig, userConfig)
 
-			// Simulate CLI flag override
+			// Simulate CLI flag override (using Changed() pattern)
+			// In real usage, Changed() detects if flag was explicitly set
 			if tt.cliFlag > 0 {
 				baseConfig.Renderer.FontSize = tt.cliFlag
 			}
@@ -82,7 +83,7 @@ func TestConfigMergingPriority(t *testing.T) {
 
 func TestConvertRequiresInput(t *testing.T) {
 	// Test that convert command with no args fails
-	cmd := convertCmd
+	cmd := newConvertCommand()
 
 	// Execute with no arguments
 	err := cmd.Args(cmd, []string{})
@@ -91,10 +92,27 @@ func TestConvertRequiresInput(t *testing.T) {
 	}
 }
 
-func TestMultipleFilesWithOutputFlag(t *testing.T) {
+func TestMultipleFilesWithOutputFlagReturnsError(t *testing.T) {
 	// When multiple files are provided with a single output path,
-	// it should work (each file gets converted sequentially)
-	// This tests the behavior rather than an error case
+	// the command should return an error to prevent silent overwrites
+
+	cmd := newConvertCommand()
+	cmd.SetArgs([]string{"file1.md", "file2.md", "-o", "output.pdf"})
+
+	err := cmd.Execute()
+	if err == nil {
+		t.Error("expected error when using --output with multiple input files")
+	}
+
+	expectedMsg := "cannot use --output with multiple input files"
+	if err != nil && !strings.Contains(err.Error(), expectedMsg) {
+		t.Errorf("expected error containing %q, got: %v", expectedMsg, err)
+	}
+}
+
+func TestMultipleFilesWithoutOutputFlag(t *testing.T) {
+	// When multiple files are provided without -o flag,
+	// each file should generate its own PDF
 
 	tempDir := t.TempDir()
 
@@ -109,14 +127,9 @@ func TestMultipleFilesWithOutputFlag(t *testing.T) {
 		t.Fatalf("failed to create test file: %v", err)
 	}
 
-	// Note: When multiple files are provided with -o flag,
-	// only the last file's output goes to the specified path
-	// This is current behavior - each file converts to its own PDF
-	// unless output is specified, in which case each overwrites the previous
-
 	opts := core.ConversionOptions{
 		InputFiles: []string{file1, file2},
-		OutputPath: "",  // Let each file generate its own output
+		OutputPath: "", // Let each file generate its own output
 		Verbose:    false,
 	}
 
@@ -155,7 +168,7 @@ func TestMultipleFilesWithOutputFlag(t *testing.T) {
 
 func TestZeroMarginCanBeSet(t *testing.T) {
 	// Verify that 0 margin values are actually applied and not ignored
-	// This is important because zero is a valid margin value
+	// This is important because zero is a valid margin value for full-bleed printing
 
 	tests := []struct {
 		name         string
@@ -184,9 +197,7 @@ func TestZeroMarginCanBeSet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := core.DefaultConfig()
 
-			// Apply zero margins directly (simulating CLI flag behavior)
-			// Note: Current implementation uses > 0 check, so zeros won't override
-			// This test documents this behavior
+			// Apply zero margins directly (simulating CLI flag behavior with Changed())
 			cfg.Renderer.Margins.Top = tt.marginTop
 			cfg.Renderer.Margins.Bottom = tt.marginBottom
 			cfg.Renderer.Margins.Left = tt.marginLeft
@@ -212,6 +223,26 @@ func TestZeroMarginCanBeSet(t *testing.T) {
 				t.Errorf("config with zero margins should be valid: %v", err)
 			}
 		})
+	}
+}
+
+func TestZeroMarginViaCLIFlag(t *testing.T) {
+	// Test that zero margins can be set via CLI flags using Changed() detection
+	cmd := newConvertCommand()
+
+	// Simulate setting margin-top=0 via CLI
+	if err := cmd.Flags().Set("margin-top", "0"); err != nil {
+		t.Fatalf("failed to set flag: %v", err)
+	}
+
+	// Verify Changed() returns true for explicitly set flag
+	if !cmd.Flags().Changed("margin-top") {
+		t.Error("Changed() should return true for explicitly set margin-top=0")
+	}
+
+	// Verify Changed() returns false for unset flags
+	if cmd.Flags().Changed("margin-bottom") {
+		t.Error("Changed() should return false for unset margin-bottom")
 	}
 }
 
@@ -294,10 +325,61 @@ func TestConvertCmdArgsValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := convertCmd.Args(convertCmd, tt.args)
+			cmd := newConvertCommand()
+			err := cmd.Args(cmd, tt.args)
 			if (err != nil) != tt.wantError {
 				t.Errorf("Args() error = %v, wantError %v", err, tt.wantError)
 			}
 		})
+	}
+}
+
+func TestApplyOverridesWithChanged(t *testing.T) {
+	// Test that applyOverrides correctly uses Changed() for all numeric flags
+	c := &convertCommand{
+		marginTop:    0,
+		marginBottom: 0,
+		fontSize:     0,
+		mermaidScale: 0,
+	}
+
+	cmd := newConvertCommand()
+	cfg := core.DefaultConfig()
+
+	// Set some flags explicitly (including zero values)
+	if err := cmd.Flags().Set("margin-top", "0"); err != nil {
+		t.Fatalf("failed to set margin-top: %v", err)
+	}
+	if err := cmd.Flags().Set("font-size", "0"); err != nil {
+		t.Fatalf("failed to set font-size: %v", err)
+	}
+
+	// Store original values
+	originalMarginBottom := cfg.Renderer.Margins.Bottom
+	originalMermaidScale := cfg.Renderer.Mermaid.Scale
+
+	// Apply overrides
+	c.applyOverrides(cmd, cfg)
+
+	// margin-top was explicitly set to 0, should be 0
+	if cfg.Renderer.Margins.Top != 0 {
+		t.Errorf("margin-top should be 0, got %v", cfg.Renderer.Margins.Top)
+	}
+
+	// font-size was explicitly set to 0, should be 0
+	if cfg.Renderer.FontSize != 0 {
+		t.Errorf("font-size should be 0, got %v", cfg.Renderer.FontSize)
+	}
+
+	// margin-bottom was NOT set, should retain default
+	if cfg.Renderer.Margins.Bottom != originalMarginBottom {
+		t.Errorf("margin-bottom should retain default %v, got %v",
+			originalMarginBottom, cfg.Renderer.Margins.Bottom)
+	}
+
+	// mermaid-scale was NOT set, should retain default
+	if cfg.Renderer.Mermaid.Scale != originalMermaidScale {
+		t.Errorf("mermaid-scale should retain default %v, got %v",
+			originalMermaidScale, cfg.Renderer.Mermaid.Scale)
 	}
 }
