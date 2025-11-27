@@ -80,3 +80,6 @@ func getHeadingPrefix(level int) string {
 	}
 	return prefix + "•"
 }
+
+// main is required for Go plugin compilation with -buildmode=plugin
+func main() {}

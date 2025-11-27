@@ -73,10 +73,23 @@ func (e *Engine) Convert(opts ConversionOptions) error {
 		}
 	}()
 
-	for _, inputFile := range opts.InputFiles {
+	total := len(opts.InputFiles)
+	for i, inputFile := range opts.InputFiles {
+		outputPath := e.determineOutputPath(inputFile, opts.OutputPath)
+
+		// Call progress callback before conversion
+		if opts.OnProgress != nil {
+			opts.OnProgress(i+1, total, inputFile, outputPath)
+		}
+
 		err := e.convertFile(inputFile, opts.OutputPath)
 		if err != nil {
 			return fmt.Errorf("failed to convert %s: %w", inputFile, err)
+		}
+
+		// Call completion callback after successful conversion
+		if opts.OnComplete != nil {
+			opts.OnComplete(i+1, total, inputFile, outputPath)
 		}
 
 		if opts.Verbose {
@@ -98,10 +111,32 @@ func (e *Engine) convertFile(inputPath, outputPath string) error {
 		}
 	}
 
+	return e.convertContent(content, inputPath, outputPath)
+}
+
+// ConvertFromContent converts markdown content from bytes to PDF.
+// This is used for stdin input where content is provided directly.
+func (e *Engine) ConvertFromContent(content []byte, outputPath string) error {
+	// Load plugins
+	err := e.plugins.LoadPlugins()
+	if err != nil {
+		return fmt.Errorf("failed to load plugins: %w", err)
+	}
+
+	defer func() {
+		if cleanupErr := e.plugins.Cleanup(); cleanupErr != nil {
+			fmt.Printf("Warning: plugin cleanup failed: %v\n", cleanupErr)
+		}
+	}()
+
+	return e.convertContent(content, "stdin", outputPath)
+}
+
+func (e *Engine) convertContent(content []byte, sourceName, outputPath string) error {
 	node, err := e.parser.Parse(content)
 	if err != nil {
 		return &ConversionError{
-			File:    inputPath,
+			File:    sourceName,
 			Phase:   "markdown parsing",
 			Message: "could not parse markdown content",
 			Cause:   err,
@@ -111,19 +146,19 @@ func (e *Engine) convertFile(inputPath, outputPath string) error {
 	pdfBuffer, err := e.renderer.Render(node, content)
 	if err != nil {
 		return &ConversionError{
-			File:    inputPath,
+			File:    sourceName,
 			Phase:   "PDF rendering",
 			Message: "could not render PDF",
 			Cause:   err,
 		}
 	}
 
-	finalOutputPath := e.determineOutputPath(inputPath, outputPath)
+	finalOutputPath := e.determineOutputPath(sourceName, outputPath)
 
 	err = os.WriteFile(finalOutputPath, pdfBuffer.Bytes(), 0600)
 	if err != nil {
 		return &ConversionError{
-			File:    inputPath,
+			File:    sourceName,
 			Phase:   "file writing",
 			Message: "could not write PDF file",
 			Cause:   err,

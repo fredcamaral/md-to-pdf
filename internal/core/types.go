@@ -56,9 +56,17 @@ type Margins struct {
 	Right  float64
 }
 
+// ProgressCallback is called during conversion to report progress.
+// It receives the current file index (1-based), total file count, input filename, and output filename.
+type ProgressCallback func(current, total int, inputFile, outputFile string)
+
 type ConversionOptions struct {
 	InputFiles []string
 	OutputPath string
 	PluginDir  string
 	Verbose    bool
+	// OnProgress is called before converting each file (optional).
+	OnProgress ProgressCallback
+	// OnComplete is called after successfully converting each file (optional).
+	OnComplete ProgressCallback
 }
