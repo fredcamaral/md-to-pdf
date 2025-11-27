@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -20,9 +21,22 @@ const (
 	configKeyPageSize
 )
 
+// configCategory groups related configuration keys.
+type configCategory string
+
+const (
+	categoryTypography configCategory = "Typography"
+	categoryCode       configCategory = "Code Styling"
+	categoryPage       configCategory = "Page Layout"
+	categoryMetadata   configCategory = "PDF Metadata"
+	categoryMermaid    configCategory = "Mermaid Settings"
+)
+
 // configKeyDef defines metadata for a configuration key including validation rules.
 type configKeyDef struct {
 	name         string
+	category     configCategory
+	description  string
 	keyType      configKeyType
 	defaultValue interface{}
 	minValue     float64
@@ -37,6 +51,8 @@ var configKeys = []configKeyDef{
 	// Typography & Fonts
 	{
 		name:         "font-family",
+		category:     categoryTypography,
+		description:  "Font family for body text (Arial, Times, Helvetica, Courier)",
 		keyType:      configKeyString,
 		defaultValue: "Arial",
 		getter:       func(c *config.UserConfig) interface{} { return c.FontFamily },
@@ -45,6 +61,8 @@ var configKeys = []configKeyDef{
 	},
 	{
 		name:         "font-size",
+		category:     categoryTypography,
+		description:  "Font size in points (range: 1-72)",
 		keyType:      configKeyFloat64,
 		defaultValue: 12.0,
 		minValue:     core.FontSizeMin,
@@ -55,6 +73,8 @@ var configKeys = []configKeyDef{
 	},
 	{
 		name:         "heading-scale",
+		category:     categoryTypography,
+		description:  "Heading size multiplier (range: 0.1-10.0)",
 		keyType:      configKeyFloat64,
 		defaultValue: 1.5,
 		minValue:     core.HeadingScaleMin,
@@ -65,6 +85,8 @@ var configKeys = []configKeyDef{
 	},
 	{
 		name:         "line-spacing",
+		category:     categoryTypography,
+		description:  "Line spacing multiplier (range: 0.1-5.0)",
 		keyType:      configKeyFloat64,
 		defaultValue: 1.2,
 		minValue:     core.LineSpacingMin,
@@ -76,6 +98,8 @@ var configKeys = []configKeyDef{
 	// Code styling
 	{
 		name:         "code-font",
+		category:     categoryCode,
+		description:  "Font family for code blocks (typically monospace)",
 		keyType:      configKeyString,
 		defaultValue: "Courier",
 		getter:       func(c *config.UserConfig) interface{} { return c.CodeFont },
@@ -84,6 +108,8 @@ var configKeys = []configKeyDef{
 	},
 	{
 		name:         "code-size",
+		category:     categoryCode,
+		description:  "Font size for code blocks in points (range: 6-48)",
 		keyType:      configKeyFloat64,
 		defaultValue: 10.0,
 		minValue:     core.CodeSizeMin,
@@ -95,6 +121,8 @@ var configKeys = []configKeyDef{
 	// Page layout
 	{
 		name:         "page-size",
+		category:     categoryPage,
+		description:  "Page size (A3, A4, A5, Letter, Legal, Tabloid)",
 		keyType:      configKeyPageSize,
 		defaultValue: "A4",
 		getter:       func(c *config.UserConfig) interface{} { return c.PageSize },
@@ -103,6 +131,8 @@ var configKeys = []configKeyDef{
 	},
 	{
 		name:         "margin-top",
+		category:     categoryPage,
+		description:  "Top margin in mm (range: 0-100)",
 		keyType:      configKeyFloat64,
 		defaultValue: 20.0,
 		minValue:     core.MarginMin,
@@ -113,6 +143,8 @@ var configKeys = []configKeyDef{
 	},
 	{
 		name:         "margin-bottom",
+		category:     categoryPage,
+		description:  "Bottom margin in mm (range: 0-100)",
 		keyType:      configKeyFloat64,
 		defaultValue: 20.0,
 		minValue:     core.MarginMin,
@@ -123,6 +155,8 @@ var configKeys = []configKeyDef{
 	},
 	{
 		name:         "margin-left",
+		category:     categoryPage,
+		description:  "Left margin in mm (range: 0-100)",
 		keyType:      configKeyFloat64,
 		defaultValue: 15.0,
 		minValue:     core.MarginMin,
@@ -133,6 +167,8 @@ var configKeys = []configKeyDef{
 	},
 	{
 		name:         "margin-right",
+		category:     categoryPage,
+		description:  "Right margin in mm (range: 0-100)",
 		keyType:      configKeyFloat64,
 		defaultValue: 15.0,
 		minValue:     core.MarginMin,
@@ -144,6 +180,8 @@ var configKeys = []configKeyDef{
 	// PDF metadata
 	{
 		name:         "title",
+		category:     categoryMetadata,
+		description:  "PDF document title (embedded in PDF metadata)",
 		keyType:      configKeyString,
 		defaultValue: "",
 		getter:       func(c *config.UserConfig) interface{} { return c.Title },
@@ -152,6 +190,8 @@ var configKeys = []configKeyDef{
 	},
 	{
 		name:         "author",
+		category:     categoryMetadata,
+		description:  "PDF document author (embedded in PDF metadata)",
 		keyType:      configKeyString,
 		defaultValue: "",
 		getter:       func(c *config.UserConfig) interface{} { return c.Author },
@@ -160,6 +200,8 @@ var configKeys = []configKeyDef{
 	},
 	{
 		name:         "subject",
+		category:     categoryMetadata,
+		description:  "PDF document subject (embedded in PDF metadata)",
 		keyType:      configKeyString,
 		defaultValue: "",
 		getter:       func(c *config.UserConfig) interface{} { return c.Subject },
@@ -169,6 +211,8 @@ var configKeys = []configKeyDef{
 	// Mermaid settings
 	{
 		name:         "mermaid-scale",
+		category:     categoryMermaid,
+		description:  "Mermaid diagram scale factor (range: 0.1-10.0)",
 		keyType:      configKeyFloat64,
 		defaultValue: 2.2,
 		minValue:     core.MermaidScaleMin,
@@ -179,6 +223,8 @@ var configKeys = []configKeyDef{
 	},
 	{
 		name:         "mermaid-max-width",
+		category:     categoryMermaid,
+		description:  "Max diagram width in mm, 0=page width (range: 0-1000)",
 		keyType:      configKeyFloat64,
 		defaultValue: 0.0,
 		minValue:     core.MermaidDimensionMin,
@@ -189,6 +235,8 @@ var configKeys = []configKeyDef{
 	},
 	{
 		name:         "mermaid-max-height",
+		category:     categoryMermaid,
+		description:  "Max diagram height in mm (range: 0-1000)",
 		keyType:      configKeyFloat64,
 		defaultValue: 150.0,
 		minValue:     core.MermaidDimensionMin,
@@ -216,6 +264,24 @@ func validKeysString() string {
 		keys[i] = k.name
 	}
 	return strings.Join(keys, ", ")
+}
+
+// getKeysByCategory returns all keys grouped by category in display order.
+func getKeysByCategory() map[configCategory][]configKeyDef {
+	result := make(map[configCategory][]configKeyDef)
+	for _, k := range configKeys {
+		result[k.category] = append(result[k.category], k)
+	}
+	return result
+}
+
+// categoryOrder defines the display order for categories.
+var categoryOrder = []configCategory{
+	categoryTypography,
+	categoryCode,
+	categoryPage,
+	categoryMetadata,
+	categoryMermaid,
 }
 
 var configCmd = &cobra.Command{
@@ -338,6 +404,115 @@ var configResetCmd = &cobra.Command{
 	},
 }
 
+// configKeysJSONMode tracks whether to output JSON format
+var configKeysJSONMode bool
+
+var configKeysCmd = &cobra.Command{
+	Use:   "keys",
+	Short: "List all available configuration keys",
+	Long:  "Display all available configuration keys with descriptions and default values",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if configKeysJSONMode {
+			return printConfigKeysJSON()
+		}
+		return printConfigKeysText()
+	},
+}
+
+// printConfigKeysText outputs configuration keys in human-readable format.
+func printConfigKeysText() error {
+	output := uiOutput
+
+	output.Info("Available configuration keys:")
+	output.Println()
+
+	keysByCategory := getKeysByCategory()
+
+	for _, cat := range categoryOrder {
+		keys, ok := keysByCategory[cat]
+		if !ok {
+			continue
+		}
+
+		// Print category header
+		output.Println(output.Bold(string(cat) + ":"))
+
+		for _, k := range keys {
+			// Format: key-name    description (default: value)
+			defaultStr := formatDefaultValue(k.defaultValue)
+			fmt.Printf("  %s\n", output.Highlight(k.name))
+			fmt.Printf("      %s (default: %s)\n", k.description, defaultStr)
+		}
+		output.Println()
+	}
+
+	return nil
+}
+
+// configKeyJSON represents a config key in JSON format.
+type configKeyJSON struct {
+	Name         string      `json:"name"`
+	Category     string      `json:"category"`
+	Description  string      `json:"description"`
+	Type         string      `json:"type"`
+	DefaultValue interface{} `json:"default"`
+	MinValue     *float64    `json:"min,omitempty"`
+	MaxValue     *float64    `json:"max,omitempty"`
+}
+
+// printConfigKeysJSON outputs configuration keys in JSON format.
+func printConfigKeysJSON() error {
+	var keys []configKeyJSON
+
+	for i := range configKeys {
+		k := &configKeys[i]
+		keyJSON := configKeyJSON{
+			Name:         k.name,
+			Category:     string(k.category),
+			Description:  k.description,
+			DefaultValue: k.defaultValue,
+		}
+
+		switch k.keyType {
+		case configKeyString:
+			keyJSON.Type = "string"
+		case configKeyFloat64:
+			keyJSON.Type = "number"
+			// Copy values to avoid pointer issues
+			minVal := k.minValue
+			maxVal := k.maxValue
+			keyJSON.MinValue = &minVal
+			keyJSON.MaxValue = &maxVal
+		case configKeyPageSize:
+			keyJSON.Type = "enum"
+		}
+
+		keys = append(keys, keyJSON)
+	}
+
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(keys)
+}
+
+// formatDefaultValue returns a string representation of a default value.
+func formatDefaultValue(v interface{}) string {
+	switch val := v.(type) {
+	case string:
+		if val == "" {
+			return "(none)"
+		}
+		return fmt.Sprintf("%q", val)
+	case float64:
+		if val == float64(int(val)) {
+			return fmt.Sprintf("%.0f", val)
+		}
+		return fmt.Sprintf("%.1f", val)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
 // printConfigValueFromKey prints a config value using the registry.
 func printConfigValueFromKey(userConfig *config.UserConfig, keyName string) {
 	keyDef := findConfigKey(keyName)
@@ -421,4 +596,8 @@ func init() {
 	configCmd.AddCommand(configListCmd)
 	configCmd.AddCommand(configSetCmd)
 	configCmd.AddCommand(configResetCmd)
+	configCmd.AddCommand(configKeysCmd)
+
+	// Add --json flag to keys command
+	configKeysCmd.Flags().BoolVar(&configKeysJSONMode, "json", false, "Output in JSON format")
 }
