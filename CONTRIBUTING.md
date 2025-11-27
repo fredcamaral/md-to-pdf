@@ -1,24 +1,24 @@
-# Contributing to MD-to-PDF
+# Contributing to md-to-pdf
 
-Thank you for your interest in contributing to MD-to-PDF! This document provides guidelines and information for contributors.
+This document helps you contribute to md-to-pdf.
 
-## Table of Contents
+## Table of contents
 
-- [Code of Conduct](#code-of-conduct)
-- [Getting Started](#getting-started)
-- [Development Setup](#development-setup)
-- [Contributing Guidelines](#contributing-guidelines)
-- [Plugin Development](#plugin-development)
+- [Code of conduct](#code-of-conduct)
+- [Getting started](#getting-started)
+- [Development setup](#development-setup)
+- [Contributing guidelines](#contributing-guidelines)
+- [Plugin development](#plugin-development)
 - [Testing](#testing)
 - [Documentation](#documentation)
-- [Submitting Changes](#submitting-changes)
-- [Code Review Process](#code-review-process)
+- [Submitting changes](#submitting-changes)
+- [Code review process](#code-review-process)
 
-## Code of Conduct
+## Code of conduct
 
-This project adheres to a code of conduct that we expect all contributors to follow. Please be respectful, inclusive, and considerate in all interactions.
+Follow our code of conduct. Be respectful, inclusive, and considerate in all interactions.
 
-## Getting Started
+## Getting started
 
 ### Prerequisites
 
@@ -38,12 +38,12 @@ This project adheres to a code of conduct that we expect all contributors to fol
 
 3. Add the upstream repository:
    ```bash
-   git remote add upstream https://github.com/original-owner/md-to-pdf.git
+   git remote add upstream https://github.com/fredcamaral/md-to-pdf.git
    ```
 
-## Development Setup
+## Development setup
 
-### Build the Project
+### Build the project
 
 ```bash
 # Install dependencies
@@ -59,7 +59,7 @@ make build-plugins
 make test
 ```
 
-### Project Structure
+### Project structure
 
 ```
 md-to-pdf/
@@ -78,12 +78,12 @@ md-to-pdf/
 │   └── markdown/          # Sample markdown files
 ├── pkg/                   # Public API packages
 │   └── plugin/            # Plugin development API
-├── docs/                  # Documentation
+├── plugins/               # Plugin directory and development guide
 ├── scripts/               # Build and deployment scripts
 └── tests/                 # Test files
 ```
 
-### Development Workflow
+### Development workflow
 
 1. Create a feature branch:
    ```bash
@@ -102,9 +102,9 @@ md-to-pdf/
 
 5. Push to your fork and create a pull request
 
-## Contributing Guidelines
+## Contributing guidelines
 
-### Code Style
+### Code style
 
 - Follow standard Go conventions and idioms
 - Use `gofmt` and `golint` to format code
@@ -112,7 +112,7 @@ md-to-pdf/
 - Add comments for complex logic
 - Use meaningful variable and function names
 
-### Commit Messages
+### Commit messages
 
 Follow the conventional commit format:
 
@@ -141,15 +141,15 @@ fix(renderer): resolve image positioning issue
 docs(readme): update installation instructions
 ```
 
-### Code Organization
+### Code organization
 
-- Keep functions small and focused (ideally under 50 lines)
+- Keep your functions small and focused (ideally under 50 lines)
 - Use interfaces to define contracts
 - Separate concerns clearly
 - Follow the dependency inversion principle
 - Handle errors explicitly
 
-### Error Handling
+### Error handling
 
 - Use Go's idiomatic error handling
 - Create custom error types when appropriate
@@ -173,13 +173,13 @@ func (e *Engine) Convert(opts ConversionOptions) error {
 }
 ```
 
-## Plugin Development
+## Plugin development
 
-### Plugin Types
+### Plugin types
 
-MD-to-PDF supports two types of plugins:
+md-to-pdf supports two types of plugins:
 
-#### AST Transformers
+#### AST transformers
 Modify the markdown AST before rendering:
 
 ```go
@@ -191,7 +191,7 @@ type ASTTransformer interface {
 }
 ```
 
-#### Content Generators
+#### Content generators
 Generate additional content during PDF creation:
 
 ```go
@@ -202,7 +202,7 @@ type ContentGenerator interface {
 }
 ```
 
-### Creating a Plugin
+### Creating a plugin
 
 1. Create a new directory in `examples/plugins/`
 2. Implement the required interfaces
@@ -214,7 +214,7 @@ Example plugin structure:
 package main
 
 import (
-    "github.com/your-username/md-to-pdf/pkg/plugin"
+    "github.com/fredcamaral/md-to-pdf/pkg/plugin"
 )
 
 type MyPlugin struct{}
@@ -229,7 +229,7 @@ func NewPlugin() plugin.Plugin {
 }
 ```
 
-### Plugin Guidelines
+### Plugin guidelines
 
 - Follow the plugin interface contracts
 - Handle errors gracefully
@@ -239,7 +239,7 @@ func NewPlugin() plugin.Plugin {
 
 ## Testing
 
-### Running Tests
+### Running tests
 
 ```bash
 # Run all tests
@@ -255,9 +255,9 @@ go test ./internal/core -v
 go test -race ./...
 ```
 
-### Writing Tests
+### Writing tests
 
-- Write unit tests for all public functions
+- Write unit tests for all public functions you create
 - Use table-driven tests when appropriate
 - Mock external dependencies
 - Test error conditions
@@ -297,13 +297,13 @@ func TestEngine_Convert(t *testing.T) {
 
 ## Documentation
 
-### Code Documentation
+### Code documentation
 
 - Use Go doc comments for exported functions and types
 - Follow the standard Go documentation format
 - Include examples in documentation when helpful
 
-### README Updates
+### README updates
 
 When adding new features:
 - Update the feature list
@@ -317,17 +317,17 @@ Update CHANGELOG.md for all changes:
 - Include the type of change (Added, Changed, Deprecated, Removed, Fixed, Security)
 - Reference issue numbers when applicable
 
-## Submitting Changes
+## Submitting changes
 
-### Pull Request Process
+### Pull request process
 
-1. **Update Documentation**: Ensure documentation reflects your changes
-2. **Add Tests**: Include tests for new functionality
-3. **Update Changelog**: Add entry to CHANGELOG.md
-4. **Clean Commit History**: Squash commits if necessary
-5. **Fill PR Template**: Provide clear description of changes
+1. **Update documentation**: Update documentation to reflect your changes
+2. **Add tests**: Include tests for new functionality
+3. **Update changelog**: Add entry to CHANGELOG.md
+4. **Clean commit history**: Squash commits if necessary
+5. **Fill PR template**: Provide clear description of changes
 
-### Pull Request Template
+### Pull request template
 
 ```markdown
 ## Description
@@ -351,37 +351,41 @@ Brief description of changes
 - [ ] Changelog updated
 ```
 
-### What to Include
+### What to include
 
 - Clear description of the problem and solution
 - Screenshots for UI changes
 - Performance impact assessment for significant changes
 - Breaking change documentation
 
-## Code Review Process
+## Code review process
 
-### Reviewer Guidelines
+### Reviewer guidelines
+
+As a reviewer, you should:
 
 - Focus on code quality, maintainability, and correctness
 - Suggest improvements constructively
 - Test the changes locally when possible
 - Check documentation and tests
 
-### Author Guidelines
+### Author guidelines
+
+As an author, you should:
 
 - Respond to feedback promptly
 - Make requested changes or discuss alternatives
 - Keep discussions focused and professional
 - Update PR based on feedback
 
-### Approval Process
+### Approval process
 
 - At least one maintainer approval required
 - All CI checks must pass
 - No unresolved conversations
 - Up-to-date with main branch
 
-## Development Tips
+## Development tips
 
 ### Debugging
 
@@ -396,18 +400,18 @@ Brief description of changes
 - Consider memory allocation patterns
 - Test with large files
 
-### Plugin Development
+### Plugin development
 
 - Start with the example plugins
 - Use the provided plugin interfaces
 - Test plugins with various markdown inputs
 - Document plugin configuration options
 
-## Getting Help
+## Getting help
 
 - **Issues**: Create an issue for bugs or feature requests
 - **Discussions**: Use GitHub Discussions for questions
-- **Documentation**: Check the docs/ directory
+- **Documentation**: Check the README.md and plugins/README.md
 - **Examples**: Look at example plugins and markdown files
 
 ## Recognition
@@ -417,4 +421,4 @@ Contributors will be recognized in:
 - README.md contributors section
 - Release notes for major features
 
-Thank you for contributing to MD-to-PDF!
+Thank you for contributing to md-to-pdf.

@@ -167,7 +167,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## Version History Summary
+## Summary
 
 - **v1.0.0**: Full-featured release with plugin system, configuration management, and comprehensive documentation
 - **v0.4.0**: Polish and documentation phase
@@ -177,22 +177,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Development Phases
 
-### Phase 1: Core Functionality ✅
+### Phase 1: Core Functionality [Complete]
 - Basic markdown to PDF conversion
 - Core engine architecture
 - CLI interface foundation
 
-### Phase 2: Plugin System ✅
+### Phase 2: Plugin System [Complete]
 - Plugin interface design
 - Dynamic plugin loading
 - Plugin manager implementation
 
-### Phase 3: Example Plugins ✅
+### Phase 3: Example Plugins [Complete]
 - Mermaid diagram support
 - Table of Contents generation
 - Plugin development examples
 
-### Phase 4: Polish & Documentation ✅
+### Phase 4: Polish & Documentation [Complete]
 - Error handling and testing
 - Comprehensive documentation
 - CI/CD and distribution
@@ -215,17 +215,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## Contributors
-
-- Initial development and architecture
-- Plugin system design
-- Documentation and testing
-- CI/CD implementation
-
 ## Acknowledgments
 
 Special thanks to the open-source projects that made this possible:
 - [goldmark](https://github.com/yuin/goldmark) - Markdown parsing
-- [gofpdf](https://github.com/jung-kurt/gofpdf) - PDF generation  
+- [gofpdf](https://github.com/jung-kurt/gofpdf) - PDF generation
 - [cobra](https://github.com/spf13/cobra) - CLI framework
 - [mermaid](https://mermaid.js.org/) - Diagram generation
+
+[Unreleased]: https://github.com/fredcamaral/md-to-pdf/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/fredcamaral/md-to-pdf/releases/tag/v1.0.0
+[0.4.0]: https://github.com/fredcamaral/md-to-pdf/releases/tag/v0.4.0
+[0.3.0]: https://github.com/fredcamaral/md-to-pdf/releases/tag/v0.3.0
+[0.2.0]: https://github.com/fredcamaral/md-to-pdf/releases/tag/v0.2.0
+[0.1.0]: https://github.com/fredcamaral/md-to-pdf/releases/tag/v0.1.0

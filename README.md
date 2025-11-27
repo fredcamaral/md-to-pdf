@@ -2,37 +2,56 @@
 
 A powerful, extensible markdown to PDF converter written in Go with plugin support.
 
+## Why md-to-pdf?
+
+There are several tools for converting Markdown to PDF. Here's how MD-to-PDF compares:
+
+| Feature | MD-to-PDF | Pandoc | wkhtmltopdf |
+|---------|-----------|--------|-------------|
+| Binary Size | ~12MB | ~50MB | ~100MB |
+| Dependencies | None | System libs | System libs |
+| Plugin System | Yes | Filters | No |
+| Learning Curve | Low | High | Medium |
+| Configuration | Simple YAML | Complex | Command flags |
+
+**Key differentiators:**
+
+- **Zero dependencies**: Single binary, no runtime requirements. Download and run.
+- **Plugin architecture**: Extend functionality without modifying core code. Add custom transformations, content generators, and more.
+- **Simple configuration**: Human-readable YAML config with sensible defaults. No need to memorize complex command-line flags.
+- **Built for Markdown**: Purpose-built for Markdown-to-PDF conversion, not a general-purpose document converter.
+
 ## Features
 
-- 🚀 **Fast & Reliable**: Built in Go for performance and reliability
-- 🔌 **Plugin System**: Extensible architecture with custom plugin support
-- 🎨 **Rich Formatting**: Support for tables, code blocks, images, and more
-- 📊 **Mermaid Diagrams**: Built-in support for Mermaid diagram generation
-- ⚙️ **Configurable**: Extensive customization options for fonts, margins, spacing
-- 📖 **Table of Contents**: Automatic TOC generation
-- 🖥️ **CLI Interface**: Easy-to-use command-line interface with sensible defaults
+- **Fast & reliable**: Built in Go for performance and reliability
+- **Plugin system**: Extensible architecture with custom plugin support
+- **Rich formatting**: Support for tables, code blocks, images, and more
+- **Mermaid diagrams**: Built-in support for Mermaid diagram generation
+- **Configurable**: Extensive customization options for fonts, margins, spacing
+- **Table of contents**: Automatic TOC generation
+- **CLI interface**: Easy-to-use command-line interface with sensible defaults
 
-## Quick Start
+## Quick start
 
 ### Installation
 
 #### Using the install script (recommended):
 ```bash
-curl -sSL https://raw.githubusercontent.com/your-username/md-to-pdf/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/fredcamaral/md-to-pdf/main/install.sh | bash
 ```
 
 #### Manual installation:
-1. Download the latest release from [GitHub Releases](https://github.com/your-username/md-to-pdf/releases)
+1. Download the latest release from [GitHub Releases](https://github.com/fredcamaral/md-to-pdf/releases)
 2. Extract and move the binary to your PATH
 
 #### Build from source:
 ```bash
-git clone https://github.com/your-username/md-to-pdf.git
+git clone https://github.com/fredcamaral/md-to-pdf.git
 cd md-to-pdf
 make build
 ```
 
-### Basic Usage
+### Basic usage
 
 Convert a markdown file to PDF:
 ```bash
@@ -68,11 +87,11 @@ Reset configuration to defaults:
 md-to-pdf config reset
 ```
 
-## Plugin System
+## Plugin system
 
 MD-to-PDF supports two types of plugins:
 
-### AST Transformers
+### AST transformers
 Modify the markdown abstract syntax tree before rendering:
 ```go
 type ASTTransformer interface {
@@ -82,7 +101,7 @@ type ASTTransformer interface {
 }
 ```
 
-### Content Generators
+### Content generators
 Generate additional content during PDF creation:
 ```go
 type ContentGenerator interface {
@@ -91,18 +110,18 @@ type ContentGenerator interface {
 }
 ```
 
-### Available Plugins
+### Available plugins
 
 - **Mermaid Plugin**: Converts mermaid code blocks to PNG diagrams
 - **TOC Plugin**: Generates table of contents
 
-### Loading Plugins
+### Loading plugins
 
-Place plugin `.so` files in the `plugins/` directory and they will be loaded automatically.
+Place plugin `.so` files in the `plugins/` directory and md-to-pdf loads them automatically.
 
-📖 **[Plugin Development Guide](plugins/README.md)** - Learn how to create custom plugins
+**[Plugin Development Guide](plugins/README.md)** - Learn how to create custom plugins
 
-## Configuration Options
+## Configuration options
 
 | Category | Option | Default | Description |
 |----------|--------|---------|-------------|
@@ -114,9 +133,9 @@ Place plugin `.so` files in the `plugins/` directory and they will be loaded aut
 | Mermaid | `mermaid.theme` | "default" | Mermaid theme |
 | Mermaid | `mermaid.scale` | 2.2 | Mermaid diagram scale |
 
-## CLI Commands
+## CLI commands
 
-### Convert Command
+### Convert command
 ```bash
 md-to-pdf convert [file] [flags]
 ```
@@ -137,7 +156,7 @@ md-to-pdf convert [file] [flags]
 - `--plugins-dir`: Plugins directory
 - `--verbose, -v`: Verbose output
 
-### Config Commands
+### Config commands
 ```bash
 md-to-pdf config list                    # List all configuration
 md-to-pdf config set <key> <value>      # Set configuration value
@@ -146,7 +165,7 @@ md-to-pdf config reset                  # Reset to defaults
 
 ## Examples
 
-### Basic Conversion
+### Basic conversion
 ```bash
 # Convert with defaults
 md-to-pdf convert README.md
@@ -155,7 +174,7 @@ md-to-pdf convert README.md
 md-to-pdf convert README.md -o documentation.pdf
 ```
 
-### Custom Styling
+### Custom styling
 ```bash
 # Larger font and margins
 md-to-pdf convert document.md \
@@ -168,7 +187,7 @@ md-to-pdf convert document.md \
   --font-family "Times New Roman"
 ```
 
-### Document Metadata
+### Document metadata
 ```bash
 md-to-pdf convert report.md \
   --title "Monthly Report" \
@@ -177,7 +196,7 @@ md-to-pdf convert report.md \
   --keywords "report,analytics,monthly"
 ```
 
-### Mermaid Diagrams
+### Mermaid diagrams
 ```bash
 # Custom mermaid settings
 md-to-pdf convert flowchart.md \
@@ -185,7 +204,7 @@ md-to-pdf convert flowchart.md \
   --mermaid-scale 3.0
 ```
 
-## Supported Markdown Features
+## Supported Markdown features
 
 - **Headers** (H1-H6)
 - **Emphasis** (bold, italic, strikethrough)
@@ -213,7 +232,7 @@ make test           # Run tests
 make clean          # Clean build artifacts
 ```
 
-### Project Structure
+### Project structure
 ```
 md-to-pdf/
 ├── cmd/                    # CLI commands
@@ -227,12 +246,12 @@ md-to-pdf/
 │   └── plugins/           # Example plugins
 ├── pkg/
 │   └── plugin/            # Public plugin API
-└── docs/                  # Documentation
+└── plugins/               # Plugin directory and development guide
 ```
 
 ## Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
@@ -242,11 +261,63 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 See [CHANGELOG.md](CHANGELOG.md) for version history and changes.
 
+## FAQ
+
+### How do I convert multiple files?
+
+You can use a shell loop or find command:
+```bash
+# Convert all markdown files in current directory
+for f in *.md; do md-to-pdf convert "$f"; done
+
+# Convert recursively
+find . -name "*.md" -exec md-to-pdf convert {} \;
+```
+
+### How do I customize styling?
+
+You can customize styling in two ways:
+
+1. **Command-line flags** for one-time changes:
+   ```bash
+   md-to-pdf convert doc.md --font-size 12 --margins "30,30,30,30"
+   ```
+
+2. **Configuration file** for persistent settings:
+   ```bash
+   md-to-pdf config set font.family "Times New Roman"
+   md-to-pdf config set text.fontSize 12
+   ```
+
+### How do I use plugins?
+
+1. Place `.so` plugin files in the `plugins/` directory (or specify with `--plugins-dir`)
+2. md-to-pdf loads plugins automatically on conversion
+3. See the [Plugin Development Guide](plugins/README.md) for creating custom plugins
+
+### Where is the config file stored?
+
+The configuration file is stored at:
+- **Linux/macOS**: `~/.config/md-to-pdf/config.yaml`
+- **Windows**: `%APPDATA%\md-to-pdf\config.yaml`
+
+View the current config location and values with:
+```bash
+md-to-pdf config list
+```
+
+### How do I reset configuration to defaults?
+
+```bash
+md-to-pdf config reset
+```
+
+This removes all custom settings and restores default settings.
+
 ## Support
 
-- 📖 [Documentation](docs/)
-- 🐛 [Issue Tracker](https://github.com/your-username/md-to-pdf/issues)
-- 💬 [Discussions](https://github.com/your-username/md-to-pdf/discussions)
+- [Issue Tracker](https://github.com/fredcamaral/md-to-pdf/issues)
+- [Discussions](https://github.com/fredcamaral/md-to-pdf/discussions)
 
 ## Acknowledgments
 

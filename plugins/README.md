@@ -1,20 +1,20 @@
 # Plugin Development Guide
 
-This directory contains plugins for MD-to-PDF. This guide will help you develop custom plugins to extend the functionality of the markdown to PDF converter.
+This directory contains plugins for MD-to-PDF. This guide helps you develop custom plugins to extend the functionality of the markdown to PDF converter.
 
-## Quick Start
+## Quick start
 
-1. **Check out existing plugins** in `examples/plugins/` for reference
-2. **Choose plugin type** - AST Transformer or Content Generator
-3. **Create plugin directory** with your plugin code
-4. **Build plugin** using `make build-plugins` or manually
-5. **Test plugin** by placing `.so` file in this directory
+1. Check out existing plugins in `examples/plugins/` for reference
+2. Choose a plugin type - AST transformer or content generator
+3. Create a plugin directory with your plugin code
+4. Build the plugin using `make build-plugins` or manually
+5. Test the plugin by placing the `.so` file in this directory
 
-## Plugin Types
+## Plugin types
 
 MD-to-PDF supports two types of plugins:
 
-### AST Transformers
+### AST transformers
 Modify the markdown Abstract Syntax Tree before PDF rendering.
 
 **Use cases:**
@@ -33,7 +33,7 @@ type ASTTransformer interface {
 }
 ```
 
-### Content Generators
+### Content generators
 Generate additional content during PDF creation.
 
 **Use cases:**
@@ -51,9 +51,9 @@ type ContentGenerator interface {
 }
 ```
 
-## Plugin Development
+## Plugin development
 
-### 1. Project Structure
+### 1. Project structure
 
 Create a new directory for your plugin:
 ```
@@ -64,7 +64,7 @@ plugins/
     └── README.md        # Plugin documentation
 ```
 
-### 2. Basic Plugin Template
+### 2. Basic plugin template
 
 Every plugin must implement the base `Plugin` interface:
 
@@ -96,7 +96,7 @@ func NewPlugin() plugin.Plugin {
 }
 ```
 
-### 3. AST Transformer Example
+### 3. AST transformer example
 
 ```go
 package main
@@ -144,7 +144,7 @@ func NewPlugin() plugin.Plugin {
 }
 ```
 
-### 4. Content Generator Example
+### 4. Content generator example
 
 ```go
 package main
@@ -192,9 +192,9 @@ func NewPlugin() plugin.Plugin {
 }
 ```
 
-### 5. Building Plugins
+### 5. Building plugins
 
-#### Using Make (Recommended)
+#### Using make (recommended)
 ```bash
 # Build all plugins
 make build-plugins
@@ -204,13 +204,13 @@ cd examples/plugins/myplugin
 go build -buildmode=plugin -o ../../../plugins/myplugin.so .
 ```
 
-#### Manual Build
+#### Manual build
 ```bash
 cd your-plugin-directory
 go build -buildmode=plugin -o ../../plugins/myplugin.so .
 ```
 
-### 6. Plugin Configuration
+### 6. Plugin configuration
 
 Plugins can access configuration through the context:
 
@@ -228,9 +228,9 @@ func (t *MyTransformer) Transform(node ast.Node, ctx *plugin.TransformContext) (
 }
 ```
 
-## Available Context
+## Available context
 
-### TransformContext (AST Transformers)
+### TransformContext (AST transformers)
 ```go
 type TransformContext struct {
     Config   *core.Config    // Application configuration
@@ -240,7 +240,7 @@ type TransformContext struct {
 }
 ```
 
-### GenerationContext (Content Generators)
+### GenerationContext (content generators)
 ```go
 type GenerationContext struct {
     Config   *core.Config    // Application configuration
@@ -250,9 +250,9 @@ type GenerationContext struct {
 }
 ```
 
-## Best Practices
+## Best practices
 
-### Error Handling
+### Error handling
 ```go
 func (t *MyTransformer) Transform(node ast.Node, ctx *plugin.TransformContext) (ast.Node, error) {
     if err := validateInput(node); err != nil {
@@ -265,7 +265,7 @@ func (t *MyTransformer) Transform(node ast.Node, ctx *plugin.TransformContext) (
 }
 ```
 
-### Resource Management
+### Resource management
 ```go
 func (g *MyGenerator) GenerateContent(ctx *plugin.GenerationContext) error {
     // Open resources
@@ -299,9 +299,9 @@ func (p *MyPlugin) loadConfig(config *core.Config) *PluginConfig {
 }
 ```
 
-## Testing Plugins
+## Testing plugins
 
-### Unit Testing
+### Unit testing
 ```go
 func TestMyTransformer_Transform(t *testing.T) {
     transformer := &MyTransformer{}
@@ -323,7 +323,7 @@ func TestMyTransformer_Transform(t *testing.T) {
 }
 ```
 
-### Integration Testing
+### Integration testing
 ```bash
 # Build plugin
 go build -buildmode=plugin -o plugins/myplugin.so .
@@ -332,31 +332,31 @@ go build -buildmode=plugin -o plugins/myplugin.so .
 echo "# Test\n\`\`\`custom\ntest content\n\`\`\`" | md-to-pdf convert - --plugins-dir ./plugins
 ```
 
-## Example Plugins
+## Example plugins
 
-### Mermaid Plugin
+### Mermaid plugin
 Converts mermaid code blocks to PNG diagrams.
 
 **Location:** `examples/plugins/mermaid/`
-**Type:** AST Transformer
+**Type:** AST transformer
 **Features:**
 - Detects mermaid code blocks
 - Generates PNG diagrams using mermaid CLI
 - Embeds images in PDF
 
-### TOC Plugin  
+### TOC plugin  
 Generates table of contents from headers.
 
 **Location:** `examples/plugins/toc/`
-**Type:** Content Generator
+**Type:** Content generator
 **Features:**
 - Scans document for headers
 - Generates formatted TOC
 - Adds page references
 
-## Plugin API Reference
+## Plugin API reference
 
-### Core Interfaces
+### Core interfaces
 
 ```go
 // Base plugin interface
@@ -382,7 +382,7 @@ type ContentGenerator interface {
 }
 ```
 
-### Helper Functions
+### Helper functions
 
 ```go
 // Check if node has specific attribute
@@ -401,14 +401,14 @@ func NewParagraph(text string) *ast.Paragraph
 func NewImage(src, alt string) *ast.Image
 ```
 
-## Debugging Plugins
+## Debugging plugins
 
-### Enable Verbose Logging
+### Enable verbose logging
 ```bash
 md-to-pdf convert document.md -v
 ```
 
-### Debug Output
+### Debug output
 ```go
 func (p *MyPlugin) Transform(node ast.Node, ctx *plugin.TransformContext) (ast.Node, error) {
     fmt.Printf("[DEBUG] %s: processing node %T\n", p.Name(), node)
@@ -419,7 +419,7 @@ func (p *MyPlugin) Transform(node ast.Node, ctx *plugin.TransformContext) (ast.N
 }
 ```
 
-### Common Issues
+### Common issues
 
 1. **Plugin not loading**
    - Check file permissions
@@ -438,7 +438,7 @@ func (p *MyPlugin) Transform(node ast.Node, ctx *plugin.TransformContext) (ast.N
 
 ## Distribution
 
-### Package Structure
+### Package structure
 ```
 myplugin-v1.0.0/
 ├── myplugin.so          # Compiled plugin
@@ -448,7 +448,7 @@ myplugin-v1.0.0/
 ```
 
 ### Installation
-Users can install plugins by:
+You can install plugins by:
 1. Downloading `.so` file to `plugins/` directory
 2. Building from source
 3. Using package managers (future)
@@ -471,4 +471,4 @@ When contributing plugins to the main repository:
 
 ---
 
-Happy plugin development! 🔌
+Happy plugin development.
