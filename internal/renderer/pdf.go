@@ -459,7 +459,7 @@ func (r *PDFRenderer) renderImage(pdf *gofpdf.Fpdf, image *ast.Image, source []b
 // extractTextFromNode recursively extracts text content from an AST node
 func (r *PDFRenderer) extractTextFromNode(node ast.Node, source []byte) string {
 	var result string
-	ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+	_ = ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if entering && n.Kind() == ast.KindText {
 			textNode := n.(*ast.Text)
 			result += string(textNode.Segment.Value(source))

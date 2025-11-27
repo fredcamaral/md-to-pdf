@@ -537,9 +537,9 @@ func TestResetConfigValue_UnknownKeyListsValidKeys(t *testing.T) {
 
 func TestFindConfigKey(t *testing.T) {
 	tests := []struct {
-		name     string
-		keyName  string
-		wantNil  bool
+		name    string
+		keyName string
+		wantNil bool
 	}{
 		{"valid_key_font_size", "font-size", false},
 		{"valid_key_page_size", "page-size", false},
@@ -705,5 +705,98 @@ func TestSetConfigValue_InvalidPageSize(t *testing.T) {
 	err := setConfigValue(userConfig, "page-size", "InvalidSize")
 	if err == nil {
 		t.Error("setConfigValue with invalid page-size should return error")
+	}
+}
+
+func TestGetKeysByCategory(t *testing.T) {
+	result := getKeysByCategory()
+
+	// Verify all categories are present
+	expectedCategories := []configCategory{
+		categoryTypography,
+		categoryCode,
+		categoryPage,
+		categoryMetadata,
+		categoryMermaid,
+	}
+
+	for _, cat := range expectedCategories {
+		keys, ok := result[cat]
+		if !ok {
+			t.Errorf("getKeysByCategory() missing category %q", cat)
+			continue
+		}
+		if len(keys) == 0 {
+			t.Errorf("getKeysByCategory() category %q has no keys", cat)
+		}
+	}
+
+	// Verify specific keys are in correct categories
+	typographyKeys := result[categoryTypography]
+	hasFont := false
+	for _, k := range typographyKeys {
+		if k.name == "font-family" {
+			hasFont = true
+			break
+		}
+	}
+	if !hasFont {
+		t.Error("Typography category should contain font-family key")
+	}
+}
+
+func TestFormatDefaultValue(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    interface{}
+		expected string
+	}{
+		{"empty_string", "", "(none)"},
+		{"non_empty_string", "Arial", "\"Arial\""},
+		{"integer_float", float64(12), "12"},
+		{"decimal_float", 1.5, "1.5"},
+		{"zero_float", float64(0), "0"},
+		{"other_type", 42, "42"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatDefaultValue(tt.value)
+			if result != tt.expected {
+				t.Errorf("formatDefaultValue(%v) = %q, want %q", tt.value, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestConfigKeysHaveDescriptions(t *testing.T) {
+	for _, k := range configKeys {
+		if k.description == "" {
+			t.Errorf("config key %q has no description", k.name)
+		}
+		if k.category == "" {
+			t.Errorf("config key %q has no category", k.name)
+		}
+	}
+}
+
+func TestCategoryOrder(t *testing.T) {
+	// Ensure all categories are in categoryOrder
+	seen := make(map[configCategory]bool)
+	for _, k := range configKeys {
+		seen[k.category] = true
+	}
+
+	for cat := range seen {
+		found := false
+		for _, c := range categoryOrder {
+			if c == cat {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("category %q is used but not in categoryOrder", cat)
+		}
 	}
 }

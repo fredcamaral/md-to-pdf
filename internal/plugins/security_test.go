@@ -425,7 +425,7 @@ func TestVerifyPlugin(t *testing.T) {
 	config.RequireVerification = true
 	config.AllowUnsignedPlugins = false
 
-	event, err = VerifyPlugin(testPlugin, config, allowlist)
+	_, err = VerifyPlugin(testPlugin, config, allowlist)
 	if err == nil {
 		t.Error("Should error when verification required but no allowlist")
 	}
@@ -457,7 +457,7 @@ func TestVerifyPlugin(t *testing.T) {
 		Enabled:  true,
 	}
 
-	event, err = VerifyPlugin(testPlugin, config, allowlist)
+	_, err = VerifyPlugin(testPlugin, config, allowlist)
 	if err == nil {
 		t.Error("Should error with wrong checksum")
 	}

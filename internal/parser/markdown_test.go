@@ -184,43 +184,43 @@ func TestParse_Paragraphs(t *testing.T) {
 
 func TestParse_CodeBlocks(t *testing.T) {
 	tests := []struct {
-		name           string
-		input          string
-		expectedLang   string
-		expectedCode   string
-		isFencedBlock  bool
+		name          string
+		input         string
+		expectedLang  string
+		expectedCode  string
+		isFencedBlock bool
 	}{
 		{
-			name: "fenced_code_block_go",
-			input: "```go\nfunc main() {}\n```",
+			name:          "fenced_code_block_go",
+			input:         "```go\nfunc main() {}\n```",
 			expectedLang:  "go",
 			expectedCode:  "func main() {}\n",
 			isFencedBlock: true,
 		},
 		{
-			name: "fenced_code_block_python",
-			input: "```python\nprint('hello')\n```",
+			name:          "fenced_code_block_python",
+			input:         "```python\nprint('hello')\n```",
 			expectedLang:  "python",
 			expectedCode:  "print('hello')\n",
 			isFencedBlock: true,
 		},
 		{
-			name: "fenced_code_block_no_language",
-			input: "```\nsome code\n```",
+			name:          "fenced_code_block_no_language",
+			input:         "```\nsome code\n```",
 			expectedLang:  "",
 			expectedCode:  "some code\n",
 			isFencedBlock: true,
 		},
 		{
-			name: "fenced_code_block_javascript",
-			input: "```javascript\nconsole.log('test');\n```",
+			name:          "fenced_code_block_javascript",
+			input:         "```javascript\nconsole.log('test');\n```",
 			expectedLang:  "javascript",
 			expectedCode:  "console.log('test');\n",
 			isFencedBlock: true,
 		},
 		{
-			name: "indented_code_block",
-			input: "    indented code",
+			name:          "indented_code_block",
+			input:         "    indented code",
 			expectedLang:  "",
 			expectedCode:  "indented code",
 			isFencedBlock: false,

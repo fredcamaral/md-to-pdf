@@ -12,9 +12,9 @@ import (
 
 func TestNewManager(t *testing.T) {
 	tests := []struct {
-		name       string
-		pluginDir  string
-		enabled    bool
+		name      string
+		pluginDir string
+		enabled   bool
 	}{
 		{
 			name:      "enabled_with_default_dir",
@@ -228,7 +228,7 @@ func TestApplyTransformers_SupportedNodes(t *testing.T) {
 		Config:      make(map[string]interface{}),
 	}
 
-	result, err := manager.ApplyTransformers(paragraphNode, ctx)
+	_, err := manager.ApplyTransformers(paragraphNode, ctx)
 	if err != nil {
 		t.Fatalf("ApplyTransformers failed: %v", err)
 	}
@@ -245,7 +245,7 @@ func TestApplyTransformers_SupportedNodes(t *testing.T) {
 		Config:      make(map[string]interface{}),
 	}
 
-	result, err = manager.ApplyTransformers(headingNode, ctx)
+	result, err := manager.ApplyTransformers(headingNode, ctx)
 	if err != nil {
 		t.Fatalf("ApplyTransformers failed: %v", err)
 	}
@@ -590,11 +590,11 @@ type testPlugin struct {
 	cleanupErr  error
 }
 
-func (p *testPlugin) Name() string        { return p.name }
-func (p *testPlugin) Version() string     { return p.version }
-func (p *testPlugin) Description() string { return p.description }
+func (p *testPlugin) Name() string                             { return p.name }
+func (p *testPlugin) Version() string                          { return p.version }
+func (p *testPlugin) Description() string                      { return p.description }
 func (p *testPlugin) Init(config map[string]interface{}) error { return nil }
-func (p *testPlugin) Cleanup() error      { return p.cleanupErr }
+func (p *testPlugin) Cleanup() error                           { return p.cleanupErr }
 
 type testTransformer struct {
 	name           string
@@ -605,13 +605,13 @@ type testTransformer struct {
 	transformFunc  func(ast.Node, *TransformContext) (ast.Node, error)
 }
 
-func (t *testTransformer) Name() string        { return t.name }
-func (t *testTransformer) Version() string     { return t.version }
-func (t *testTransformer) Description() string { return t.description }
+func (t *testTransformer) Name() string                             { return t.name }
+func (t *testTransformer) Version() string                          { return t.version }
+func (t *testTransformer) Description() string                      { return t.description }
 func (t *testTransformer) Init(config map[string]interface{}) error { return nil }
-func (t *testTransformer) Cleanup() error      { return nil }
-func (t *testTransformer) Priority() int       { return t.priority }
-func (t *testTransformer) SupportedNodes() []ast.NodeKind { return t.supportedNodes }
+func (t *testTransformer) Cleanup() error                           { return nil }
+func (t *testTransformer) Priority() int                            { return t.priority }
+func (t *testTransformer) SupportedNodes() []ast.NodeKind           { return t.supportedNodes }
 func (t *testTransformer) Transform(node ast.Node, ctx *TransformContext) (ast.Node, error) {
 	if t.transformFunc != nil {
 		return t.transformFunc(node, ctx)
@@ -627,12 +627,12 @@ type testGenerator struct {
 	err      error
 }
 
-func (g *testGenerator) Name() string        { return g.name }
-func (g *testGenerator) Version() string     { return g.version }
-func (g *testGenerator) Description() string { return "" }
+func (g *testGenerator) Name() string                             { return g.name }
+func (g *testGenerator) Version() string                          { return g.version }
+func (g *testGenerator) Description() string                      { return "" }
 func (g *testGenerator) Init(config map[string]interface{}) error { return nil }
-func (g *testGenerator) Cleanup() error      { return nil }
-func (g *testGenerator) GenerationPhase() GenerationPhase { return g.phase }
+func (g *testGenerator) Cleanup() error                           { return nil }
+func (g *testGenerator) GenerationPhase() GenerationPhase         { return g.phase }
 func (g *testGenerator) Generate(ctx *RenderContext) ([]PDFElement, error) {
 	if g.err != nil {
 		return nil, g.err

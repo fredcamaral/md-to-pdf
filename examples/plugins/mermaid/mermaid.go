@@ -143,7 +143,11 @@ func (p *MermaidPlugin) generateWithCLI(content, outputPath string) error {
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tempInput)
+	defer func() {
+		if err := os.Remove(tempInput); err != nil {
+			fmt.Printf("Warning: failed to remove temp file %s: %v\n", tempInput, err)
+		}
+	}()
 
 	// Run mermaid CLI
 	cmd := exec.Command("mmdc", "-i", tempInput, "-o", outputPath, "-b", "white") // #nosec G204 - command arguments are controlled
@@ -173,3 +177,6 @@ func (p *MermaidPlugin) Cleanup() error {
 	// For now, we'll keep the generated diagrams
 	return nil
 }
+
+// main is required for Go plugin compilation with -buildmode=plugin
+func main() {}

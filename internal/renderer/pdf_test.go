@@ -210,7 +210,11 @@ func TestRender_WithMermaidImage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create test image file: %v", err)
 	}
-	defer f.Close()
+	defer func() {
+		if cerr := f.Close(); cerr != nil {
+			t.Errorf("failed to close test image file: %v", cerr)
+		}
+	}()
 
 	if err := writePNG(f, img); err != nil {
 		t.Fatalf("failed to write PNG: %v", err)
@@ -540,13 +544,13 @@ type mockTransformer struct {
 	transformFunc  func(ast.Node, *plugins.TransformContext) (ast.Node, error)
 }
 
-func (m *mockTransformer) Name() string                                { return m.name }
-func (m *mockTransformer) Version() string                             { return m.version }
-func (m *mockTransformer) Description() string                         { return m.description }
-func (m *mockTransformer) Init(config map[string]interface{}) error    { return nil }
-func (m *mockTransformer) Cleanup() error                              { return nil }
-func (m *mockTransformer) Priority() int                               { return m.priority }
-func (m *mockTransformer) SupportedNodes() []ast.NodeKind              { return m.supportedNodes }
+func (m *mockTransformer) Name() string                             { return m.name }
+func (m *mockTransformer) Version() string                          { return m.version }
+func (m *mockTransformer) Description() string                      { return m.description }
+func (m *mockTransformer) Init(config map[string]interface{}) error { return nil }
+func (m *mockTransformer) Cleanup() error                           { return nil }
+func (m *mockTransformer) Priority() int                            { return m.priority }
+func (m *mockTransformer) SupportedNodes() []ast.NodeKind           { return m.supportedNodes }
 func (m *mockTransformer) Transform(node ast.Node, ctx *plugins.TransformContext) (ast.Node, error) {
 	if m.transformFunc != nil {
 		return m.transformFunc(node, ctx)

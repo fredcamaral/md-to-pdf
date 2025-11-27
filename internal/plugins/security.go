@@ -91,14 +91,24 @@ func LoadAllowlistFromFile(path string) (*PluginAllowlist, error) {
 		return NewPluginAllowlist(), nil
 	}
 
-	file, err := os.Open(path)
+	// Validate path for traversal sequences before opening
+	if containsPathTraversal(path) {
+		return nil, &PathTraversalError{
+			Path:   path,
+			Reason: "allowlist file path contains traversal sequences",
+		}
+	}
+
+	file, err := os.Open(path) // #nosec G304 -- path validated above for traversal
 	if err != nil {
 		if os.IsNotExist(err) {
 			return NewPluginAllowlist(), nil
 		}
 		return nil, fmt.Errorf("failed to open allowlist file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	allowlist := NewPluginAllowlist()
 	scanner := bufio.NewScanner(file)
@@ -196,11 +206,21 @@ func (a *PluginAllowlist) IsEmpty() bool {
 
 // CalculateFileChecksum computes the SHA256 checksum of a file
 func CalculateFileChecksum(path string) (string, error) {
-	file, err := os.Open(path)
+	// Defense-in-depth: validate path even though callers may do their own checks
+	if containsPathTraversal(path) {
+		return "", &PathTraversalError{
+			Path:   path,
+			Reason: "file path contains traversal sequences",
+		}
+	}
+
+	file, err := os.Open(path) // #nosec G304 -- path validated above for traversal
 	if err != nil {
 		return "", fmt.Errorf("failed to open file for checksum: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	hash := sha256.New()
 	if _, err := io.Copy(hash, file); err != nil {
@@ -236,12 +256,9 @@ func ValidatePluginPath(pluginDir string) (string, error) {
 	// Clean the path to remove any redundant separators or dots
 	cleanPath := filepath.Clean(absPath)
 
-	// Verify the cleaned path doesn't escape intended boundaries
-	// by checking if it still matches the expected pattern
-	if cleanPath != absPath {
-		// Path was modified during cleaning, could indicate traversal attempt
-		// Log but don't fail - the cleaned path is safe
-	}
+	// Note: cleanPath may differ from absPath after filepath.Clean removes
+	// redundant separators or dots. This is expected and safe since we already
+	// checked for explicit path traversal sequences above.
 
 	return cleanPath, nil
 }
