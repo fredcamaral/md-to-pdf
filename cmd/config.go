@@ -9,6 +9,7 @@ import (
 
 	"github.com/fredcamaral/md-to-pdf/internal/config"
 	"github.com/fredcamaral/md-to-pdf/internal/core"
+	"github.com/fredcamaral/md-to-pdf/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -421,7 +422,7 @@ var configKeysCmd = &cobra.Command{
 
 // printConfigKeysText outputs configuration keys in human-readable format.
 func printConfigKeysText() error {
-	output := uiOutput
+	output := ui.NewOutput()
 
 	output.Info("Available configuration keys:")
 	output.Println()
