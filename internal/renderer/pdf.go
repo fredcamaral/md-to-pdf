@@ -36,15 +36,24 @@ type Margins struct {
 	Right  float64
 }
 
-type PDFRenderer struct {
-	config  *RenderConfig
-	plugins *plugins.Manager
+// DocumentMetadata holds PDF document metadata
+type DocumentMetadata struct {
+	Title   string
+	Author  string
+	Subject string
 }
 
-func NewPDFRenderer(config *RenderConfig, pluginManager *plugins.Manager) *PDFRenderer {
+type PDFRenderer struct {
+	config   *RenderConfig
+	document *DocumentMetadata
+	plugins  *plugins.Manager
+}
+
+func NewPDFRenderer(config *RenderConfig, document *DocumentMetadata, pluginManager *plugins.Manager) *PDFRenderer {
 	return &PDFRenderer{
-		config:  config,
-		plugins: pluginManager,
+		config:   config,
+		document: document,
+		plugins:  pluginManager,
 	}
 }
 
@@ -55,14 +64,45 @@ func (r *PDFRenderer) Render(node ast.Node, source []byte) (*bytes.Buffer, error
 	pdf.AddPage()
 	pdf.SetFont(r.config.FontFamily, "", r.config.FontSize)
 
-	// Skip ContentGenerator for now to avoid duplicate image rendering
+	// Set document metadata if available
+	if r.document != nil {
+		pdf.SetTitle(r.document.Title, false)
+		pdf.SetAuthor(r.document.Author, false)
+		pdf.SetSubject(r.document.Subject, false)
+	}
+
+	// Generate BeforeContent elements (e.g., TOC, cover page)
+	if r.plugins != nil {
+		ctx := r.createRenderContext(pdf, source)
+		elements, err := r.plugins.GenerateContent(plugins.BeforeContent, ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate before content: %w", err)
+		}
+		for _, elem := range elements {
+			if renderErr := elem.Render(pdf, ctx); renderErr != nil {
+				return nil, fmt.Errorf("failed to render before content element: %w", renderErr)
+			}
+		}
+	}
 
 	err := r.walkAST(pdf, node, source)
 	if err != nil {
 		return nil, err
 	}
 
-	// Note: ContentGenerator phases would be used for TOC or other document-level content
+	// Generate AfterContent elements (e.g., appendix, index)
+	if r.plugins != nil {
+		ctx := r.createRenderContext(pdf, source)
+		elements, err := r.plugins.GenerateContent(plugins.AfterContent, ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate after content: %w", err)
+		}
+		for _, elem := range elements {
+			if renderErr := elem.Render(pdf, ctx); renderErr != nil {
+				return nil, fmt.Errorf("failed to render after content element: %w", renderErr)
+			}
+		}
+	}
 
 	var buf bytes.Buffer
 	err = pdf.Output(&buf)
@@ -71,6 +111,25 @@ func (r *PDFRenderer) Render(node ast.Node, source []byte) (*bytes.Buffer, error
 	}
 
 	return &buf, nil
+}
+
+// createRenderContext creates a render context for plugin content generation
+func (r *PDFRenderer) createRenderContext(pdf *gofpdf.Fpdf, source []byte) *plugins.RenderContext {
+	pageWidth, pageHeight := pdf.GetPageSize()
+	return &plugins.RenderContext{
+		PDF:        pdf,
+		Source:     source,
+		PageWidth:  pageWidth,
+		PageHeight: pageHeight,
+		Margins: plugins.RenderMargins{
+			Top:    r.config.Margins.Top,
+			Bottom: r.config.Margins.Bottom,
+			Left:   r.config.Margins.Left,
+			Right:  r.config.Margins.Right,
+		},
+		Metadata: make(map[string]interface{}),
+		Config:   make(map[string]interface{}),
+	}
 }
 
 func (r *PDFRenderer) walkAST(pdf *gofpdf.Fpdf, node ast.Node, source []byte) error {
@@ -89,16 +148,31 @@ func (r *PDFRenderer) walkAST(pdf *gofpdf.Fpdf, node ast.Node, source []byte) er
 		}
 
 		switch n.Kind() {
+		case ast.KindDocument:
+			// Document node is just a container, continue walking children
 		case ast.KindHeading:
 			r.renderHeading(pdf, n.(*ast.Heading), source)
 		case ast.KindParagraph:
 			r.renderParagraph(pdf, n.(*ast.Paragraph), source)
 		case ast.KindText:
-			r.renderText(pdf, n.(*ast.Text), source)
+			// Text nodes are handled by their parent (paragraph, heading, etc.)
+			// to ensure proper text aggregation and formatting
 		case ast.KindCodeBlock:
 			r.renderCodeBlock(pdf, n, source)
 		case ast.KindFencedCodeBlock:
 			r.renderCodeBlock(pdf, n, source)
+		case ast.KindList:
+			r.renderList(pdf, n.(*ast.List), source)
+			return ast.WalkSkipChildren, nil
+		case ast.KindBlockquote:
+			r.renderBlockquote(pdf, n.(*ast.Blockquote), source)
+			return ast.WalkSkipChildren, nil
+		case ast.KindThematicBreak:
+			r.renderThematicBreak(pdf)
+		case ast.KindImage:
+			r.renderImage(pdf, n.(*ast.Image), source)
+		case ast.KindLink:
+			// Links are handled inline within text rendering
 		}
 
 		return ast.WalkContinue, nil
@@ -257,9 +331,142 @@ func (r *PDFRenderer) renderMermaidImage(pdf *gofpdf.Fpdf, imagePath string) {
 	pdf.SetXY(x, y+imgHeightMM+5)
 }
 
-func (r *PDFRenderer) renderText(pdf *gofpdf.Fpdf, text *ast.Text, source []byte) {
-	// Text rendering is now handled in renderParagraph and renderHeading
-	// This function is kept for compatibility but doesn't render directly
+// renderList renders ordered and unordered lists
+func (r *PDFRenderer) renderList(pdf *gofpdf.Fpdf, list *ast.List, source []byte) {
+	pdf.SetFont(r.config.FontFamily, "", r.config.FontSize)
+	pdf.Ln(2)
+
+	itemNum := 1
+	for child := list.FirstChild(); child != nil; child = child.NextSibling() {
+		if child.Kind() == ast.KindListItem {
+			// Create bullet or number prefix
+			var prefix string
+			if list.IsOrdered() {
+				prefix = fmt.Sprintf("%d. ", itemNum)
+				itemNum++
+			} else {
+				prefix = "  * "
+			}
+
+			// Extract text from list item
+			itemText := r.extractTextFromNode(child, source)
+			pdf.MultiCell(0, r.config.FontSize*1.2, prefix+itemText, "", "", false)
+		}
+	}
+	pdf.Ln(2)
+}
+
+// renderBlockquote renders blockquote elements with indentation
+func (r *PDFRenderer) renderBlockquote(pdf *gofpdf.Fpdf, blockquote *ast.Blockquote, source []byte) {
+	pdf.SetFont(r.config.FontFamily, "I", r.config.FontSize)
+	pdf.Ln(2)
+
+	// Add left margin for blockquote
+	leftMargin, _, _, _ := pdf.GetMargins()
+	pdf.SetLeftMargin(leftMargin + 10)
+
+	// Extract and render blockquote content
+	blockText := r.extractTextFromNode(blockquote, source)
+	if blockText != "" {
+		pdf.MultiCell(0, r.config.FontSize*1.2, blockText, "", "", false)
+	}
+
+	// Restore margin
+	pdf.SetLeftMargin(leftMargin)
+	pdf.SetFont(r.config.FontFamily, "", r.config.FontSize)
+	pdf.Ln(2)
+}
+
+// renderThematicBreak renders horizontal rule (---, ***, ___)
+func (r *PDFRenderer) renderThematicBreak(pdf *gofpdf.Fpdf) {
+	pdf.Ln(5)
+
+	// Draw a horizontal line
+	pageWidth, _ := pdf.GetPageSize()
+	leftMargin, _, rightMargin, _ := pdf.GetMargins()
+	lineWidth := pageWidth - leftMargin - rightMargin
+
+	x, y := pdf.GetXY()
+	pdf.SetDrawColor(200, 200, 200)
+	pdf.Line(x, y, x+lineWidth, y)
+	pdf.SetDrawColor(0, 0, 0)
+
+	pdf.Ln(5)
+}
+
+// renderImage renders image elements
+func (r *PDFRenderer) renderImage(pdf *gofpdf.Fpdf, image *ast.Image, source []byte) {
+	destination := string(image.Destination)
+	altText := string(image.Text(source))
+
+	// Try to load and render the image
+	imageData, err := os.ReadFile(destination) // #nosec G304 - path from markdown content
+	if err != nil {
+		// Fallback to alt text if image can't be loaded
+		pdf.SetFont(r.config.FontFamily, "I", r.config.FontSize)
+		pdf.MultiCell(0, r.config.FontSize*1.2, fmt.Sprintf("[Image: %s]", altText), "", "", false)
+		pdf.SetFont(r.config.FontFamily, "", r.config.FontSize)
+		return
+	}
+
+	pdf.Ln(3)
+
+	// Register and render the image
+	imageName := fmt.Sprintf("img_%p", &imageData)
+	imageReader := bytes.NewReader(imageData)
+
+	// Determine image type from extension
+	imageType := "PNG"
+	if len(destination) > 4 {
+		ext := destination[len(destination)-4:]
+		switch ext {
+		case ".jpg", "jpeg":
+			imageType = "JPG"
+		case ".gif":
+			imageType = "GIF"
+		}
+	}
+
+	info := pdf.RegisterImageOptionsReader(imageName, gofpdf.ImageOptions{ImageType: imageType}, imageReader)
+	if info == nil {
+		pdf.SetFont(r.config.FontFamily, "I", r.config.FontSize)
+		pdf.MultiCell(0, r.config.FontSize*1.2, fmt.Sprintf("[Image failed to load: %s]", altText), "", "", false)
+		pdf.SetFont(r.config.FontFamily, "", r.config.FontSize)
+		return
+	}
+
+	// Calculate dimensions
+	pageWidth, _ := pdf.GetPageSize()
+	leftMargin, _, rightMargin, _ := pdf.GetMargins()
+	maxWidth := pageWidth - leftMargin - rightMargin
+
+	imgWidth, imgHeight := info.Extent()
+	imgWidthMM := float64(imgWidth) * 0.264583 // Convert pixels to mm
+	imgHeightMM := float64(imgHeight) * 0.264583
+
+	// Scale if too wide
+	if imgWidthMM > maxWidth {
+		scale := maxWidth / imgWidthMM
+		imgWidthMM = maxWidth
+		imgHeightMM = imgHeightMM * scale
+	}
+
+	x, y := pdf.GetXY()
+	pdf.ImageOptions(imageName, x, y, imgWidthMM, imgHeightMM, false, gofpdf.ImageOptions{ImageType: imageType}, 0, "")
+	pdf.SetXY(x, y+imgHeightMM+3)
+}
+
+// extractTextFromNode recursively extracts text content from an AST node
+func (r *PDFRenderer) extractTextFromNode(node ast.Node, source []byte) string {
+	var result string
+	ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+		if entering && n.Kind() == ast.KindText {
+			textNode := n.(*ast.Text)
+			result += string(textNode.Segment.Value(source))
+		}
+		return ast.WalkContinue, nil
+	})
+	return result
 }
 
 func (r *PDFRenderer) renderCodeBlock(pdf *gofpdf.Fpdf, codeBlock ast.Node, source []byte) {

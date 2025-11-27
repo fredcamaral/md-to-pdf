@@ -79,11 +79,20 @@ func ReplaceNode(oldNode, newNode ast.Node) {
 	}
 }
 
-// CreateParagraphWithText creates a new paragraph node with text content
-func CreateParagraphWithText(text string) ast.Node {
+// CreateEmptyParagraph creates a new empty paragraph node.
+// Note: Text content cannot be added directly to AST nodes since goldmark
+// Text nodes require text.Segment which references the original source bytes.
+// Use SetAttribute to attach metadata to paragraphs for plugin communication.
+func CreateEmptyParagraph() ast.Node {
+	return ast.NewParagraph()
+}
+
+// CreateParagraphWithAttribute creates a new paragraph with a custom attribute.
+// This is the recommended way to create marker paragraphs that plugins can use
+// to communicate rendering instructions (e.g., data-mermaid-image).
+func CreateParagraphWithAttribute(key string, value []byte) ast.Node {
 	paragraph := ast.NewParagraph()
-	// Note: Creating text nodes with actual content requires more complex setup
-	// This is a simplified version - full implementation would need text segments
+	paragraph.SetAttribute([]byte(key), value)
 	return paragraph
 }
 

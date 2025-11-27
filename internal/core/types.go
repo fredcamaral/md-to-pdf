@@ -1,22 +1,6 @@
 package core
 
-import (
-	"time"
-
-	"github.com/yuin/goldmark/ast"
-)
-
-type Document struct {
-	Title      string
-	Author     string
-	Subject    string
-	Keywords   []string
-	Content    ast.Node
-	Metadata   map[string]interface{}
-	SourceFile string
-	CreatedAt  time.Time
-}
-
+// Config holds all configuration for the conversion engine
 type Config struct {
 	Parser   ParserConfig
 	Renderer RenderConfig
@@ -50,6 +34,8 @@ type MermaidConfig struct {
 type PluginConfig struct {
 	Directory string
 	Enabled   bool
+	// Configs holds per-plugin configuration keyed by plugin name
+	Configs map[string]map[string]interface{}
 }
 
 type OutputConfig struct {

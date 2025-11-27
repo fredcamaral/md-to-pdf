@@ -44,11 +44,17 @@ func NewEngine(config *Config) (*Engine, error) {
 		},
 	}
 
-	pluginManager := plugins.NewManager(config.Plugins.Directory, config.Plugins.Enabled)
+	pluginManager := plugins.NewManager(config.Plugins.Directory, config.Plugins.Enabled, config.Plugins.Configs)
+
+	documentMetadata := &renderer.DocumentMetadata{
+		Title:   config.Document.Title,
+		Author:  config.Document.Author,
+		Subject: config.Document.Subject,
+	}
 
 	return &Engine{
 		parser:   parser.NewMarkdownParser(),
-		renderer: renderer.NewPDFRenderer(rendererConfig, pluginManager),
+		renderer: renderer.NewPDFRenderer(rendererConfig, documentMetadata, pluginManager),
 		plugins:  pluginManager,
 		config:   config,
 	}, nil

@@ -58,12 +58,23 @@ type TransformContext struct {
 	Config      map[string]interface{}
 }
 
+// RenderMargins represents page margins for rendering
+type RenderMargins struct {
+	Top    float64
+	Bottom float64
+	Left   float64
+	Right  float64
+}
+
 // Render context for content generators
 type RenderContext struct {
 	Document    *Document
 	CurrentPage int
 	PDF         *gofpdf.Fpdf
 	Source      []byte
+	PageWidth   float64
+	PageHeight  float64
+	Margins     RenderMargins
 	Metadata    map[string]interface{}
 	Config      map[string]interface{}
 }
